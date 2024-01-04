@@ -1,0 +1,51 @@
+doctype html
+html(lang="en")
+  head
+    // Required meta tags
+    meta(charset="utf-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1, shrink-to-fit=no")
+
+    // Bootstrap CSS
+    link(rel="stylesheet", href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css", integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm", crossorigin="anonymous")
+    link(rel="stylesheet", href="/style/major.css")
+    meta(charset="UTF-8")
+    meta(name="viewport", content="width=device-width, initial-scale=1.0")
+    title Academic Fields
+
+  body
+    .search-bar-container
+      form(action="/classsearch", method="post")
+        input(type="text", name="search" id="search" placeholder="Search for a class...")
+        input(type="submit", value="Search")
+
+    h4 This class does not exsist . . . Would you like to add it to our repo?
+    form(action="/addgrade", method="post")
+    select(name="className" id="className")
+    option(value="#{className}") #{className}
+    // Dropdown for latest grade received
+    label(for="grade") Latest Grade Received:
+    select(name="grade" id="grade")
+      option(value="A") A
+      option(value="B+") B+
+      option(value="B") B
+      option(value="C+") C+
+      option(value="C") C
+      option(value="D+") D+
+      option(value="D") D
+      option(value="F") F
+
+    // Input for the number of times class was taken
+    label(for="classCount") Number of Times Class was Taken:
+    input(type="number" name="classCount" id="classCount" min="1")
+
+    // Input for the professor with the last class
+    label(for="professor") Professor with the Last Class:
+    input(type="text" name="professor" id="professor")
+
+    input(type="submit", value="Submit")
+
+    // Optional JavaScript
+    // jQuery first, then Popper.js, then Bootstrap JS
+    script(src="https://code.jquery.com/jquery-3.2.1.slim.min.js", integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN", crossorigin="anonymous")
+    script(src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js", integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q", crossorigin="anonymous")
+    script(src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js", integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl", crossorigin="anonymous")

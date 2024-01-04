@@ -1,0 +1,35 @@
+body {
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+.search-bar-container {
+    margin: 20px 0;
+}
+
+.grid-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    grid-gap: 10px;
+    margin: 20px auto; /* Adjust margin for top/bottom spacing and auto for horizontal centering */
+    padding: 0;
+    width: calc(100% - 40px); /* Adjust width to fit screen size, minus some margin */
+    box-sizing: border-box; /* Ensure padding and border are included in width calculation */
+}
+
+.grid-container form {
+    margin: 0; /* Remove default form margin */
+}
+
+.grid-container input[type="submit"] {
+    padding: 10px;
+    background-color: #f0f0f0;
+    border: 1px solid #ddd;
+    cursor: pointer;
+    width: 100%; /* Make the button fill the form */
+    box-sizing: border-box; /* Include padding and border in the width */
+}
+
+.grid-container input[type="submit"]:hover {
+    background-color: #e7e7e7;
+}
