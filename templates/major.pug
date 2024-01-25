@@ -18,10 +18,21 @@ html(lang="en")
         input(type="text", name="search" id="search" placeholder="Search for a class...")
         input(type="submit", value="Search")
 
-    h4 Average #{major} Grade: #{gpa}
-    h5 common classes
     form(action="/home", method="post")
       input(type="submit", value="Home")
+    
+    h4 Average #{major} Grade: #{gpa}
+    h5 #{major} Classes:
+    
+    .grid-container
+      each course in classes
+        form(action="/classsearch", method="post")
+          input(type="hidden", name="search" id="search" value=course)
+          input(type="submit", value=course)
+          
+
+    
+
 
 
     // Optional JavaScript

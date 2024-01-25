@@ -21,7 +21,7 @@ html(lang="en")
     form(action="/home", method="post")
       input(type="submit", value="Home")
       
-    h4 Average #{className} Grade:
+    h4 Average #{className} #{number} Grade:
     form(action="/addgrade", method="post")
       select(name="className" id="className")
       option(value="#{className}") #{className}
