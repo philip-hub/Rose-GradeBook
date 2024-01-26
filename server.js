@@ -22,7 +22,7 @@ app.use(session({
   secret: 'your_secret_key', // A secret key for signing the session ID cookie
   resave: false,              // Forces the session to be saved back to the session store
   saveUninitialized: true,    // Forces a session that is "uninitialized" to be saved to the store
-  // other configuration options...
+  cookie: { maxAge: 7200000 } //in seconds this is 2 hours
 }));
 
 
