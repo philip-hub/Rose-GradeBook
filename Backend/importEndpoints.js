@@ -1,10 +1,10 @@
 var express = require('express');
 var router = express.Router();
 
-var EndpointService = require('./Services/EndpointServices.js');
+var ImportServices = require('./Services/ImportServices.js');
 
 router.get('/courses/', function(req, res) {
-    let imported = EndpointService.importCourses();
+    let imported = ImportServices.importCourses();
     if (imported) {
     res.send("Courses Imported Successfully");
     } else {

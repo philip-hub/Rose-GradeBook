@@ -8,6 +8,9 @@ app.use('/static', express.static("public"));
 // app.use(favicon(path.join(__dirname, 'favicon.ico')))
 
 var importEndpoints = require('./importEndpoints.js');
-app.use('/import_data/',importEndpoints);
+app.use('/import_data',importEndpoints);
+var scrapingEndpoints = require('./scrapingEndpoints.js'); // Courses router
+app.use('/scraping',scrapingEndpoints);
+
 
 app.listen(8080);
