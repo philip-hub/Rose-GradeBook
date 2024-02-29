@@ -101,3 +101,4 @@ const importCourses = () => {
     }
 }
 
+exports.importCourses = importCourses;
