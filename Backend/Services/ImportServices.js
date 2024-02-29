@@ -4,12 +4,15 @@ var types = require('tedious').TYPES;
 const fs = require("fs");
 const { DateTime } = require("luxon");
 
+// Gets formatted date
 function formattedDate (daysAgo) {
     let val = DateTime.now().minus({ days: daysAgo });
     let toRet = val.year+"-"+val.month.toString().padStart(2,'0')+"-"+val.day.toString().padStart(2,'0');
     return toRet;
 }
 
+// Read from the json files
+// TODO add enough params to specify specific json files
 function outDatabase(daysAgo) {
     let filepath = "../Backend/files/";
     let filename = formattedDate(daysAgo)+"_dayinfo";
