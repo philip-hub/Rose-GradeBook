@@ -2,11 +2,12 @@ var express = require('express');
 var router = express.Router();
 
 var ImportServices = require('./Services/ImportServices.js');
+var ScrapingServices = require('./Services/ScrapingServices.js');
 
-router.get('/courses/', function(req, res) {
-    let imported = ImportServices.importCourses();
+router.get('/courses/:year', async function(req, res) {
+    let imported = ImportServices.writeCourses(await ScrapingServices.getCourses(req.params.year));
     if (imported) {
-    res.send("Courses Imported Successfully");
+        res.send("Courses Imported Successfully");
     } else {
         res.send("Course Import Failed");
     }
