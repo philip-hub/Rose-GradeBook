@@ -92,7 +92,7 @@ async function getSections(year,username,password) {
       });
     const page = await browser.newPage();
     // Banner web schedule site
-    await page.goto("https://rosehulman.sharepoint.com/sites/MyRH", { timeout: 30000,
+    await page.goto(bannerSite, { timeout: 30000,
         waitUntil: "networkidle2"
       });
       await waitSeconds(30); // very jank fix lol, slows down scraping a lol; this where I manually log in with 2FA
