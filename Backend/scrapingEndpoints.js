@@ -51,20 +51,20 @@ async function bannerSiteUp(username, password) {
     await page.click('input[id="password"]');
     await page.keyboard.type(password, {delay: 100});
 
-    await page.screenshot({path: 'files/screenshot.png'});
+    // await page.screenshot({path: 'files/screenshot.png'});
     
     // Logging in
         // await page.click("[type=\"submit\"]");
         // await page.click(".form-group > .form-actions");
     await page.keyboard.press('Enter');
     
-    await page.screenshot({path: 'files/screenshot2.png'});
+    // await page.screenshot({path: 'files/screenshot2.png'});
     
     // Waiting for schedule page to load
     await new Promise(resolve => setTimeout(resolve, 1000));
     console.log("Waited");
 
-    await page.screenshot({path: 'files/screenshot3.png'});
+    // await page.screenshot({path: 'files/screenshot3.png'});
 
     // await browser.close();
     let content = await page.content();
@@ -79,7 +79,7 @@ async function publicSiteUp() {
     const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
     let content = await response.text();
 
-    await page.screenshot({path: 'files/screenshot4.png'});
+    // await page.screenshot({path: 'files/screenshot4.png'});
     // console.log("Search results: "+ await page.$("#search-results").toString());
     // await browser.close();
     return content;
@@ -104,7 +104,7 @@ async function getSections(year,username,password) {
     // Waiting for schedule page to load
     await new Promise(resolve => setTimeout(resolve, 1000));
 
-    await page.screenshot({path: 'files/screenshot7.png'});
+    // await page.screenshot({path: 'files/screenshot7.png'});
 
     // document.querySelector("[name=\"termcode\"] option").innerText
         // The dropdown in question
@@ -140,7 +140,7 @@ async function getOptionSections(page, year, quarter, toChoose, departments, toR
         await new Promise(resolve => setTimeout(resolve, 3000)); // An estimated boun
         if (i == 0) {
             console.log("Saving Biology and Biomedical Engineering");
-            await page.screenshot({path: 'files/screenshot10.png'}); // should be 
+            // await page.screenshot({path: 'files/screenshot10.png'}); // should be 
         }
         console.log("toRet length before: "+toRet.length);
         await getPageSections(page, year, quarter, toRet);
@@ -228,7 +228,7 @@ async function getCourses(year) {
     // Public course listing site
     await page.goto(publicSite(year), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
 
-    await page.screenshot({path: 'files/screenshot5.png'});
+    // await page.screenshot({path: 'files/screenshot5.png'});
     
     let toRet = [];
     let loop = true;
@@ -450,7 +450,7 @@ router.put('/load_courses/:year',async function(req,res) {
     // Since summer registrations are over and the public site will be aimed at potential new students, it'll switch over in May to the next school year.
     // Before April it will probably not have switched and therefore the next year will not yet be valid.
     if ((req.params.year == curYear+1 && curMonth() < 3)) {
-        res.send("Invalid month. Too early in the year for next years schedule: "+months.get(curMonth())+"\n(Correct if I'm wrong)");
+        res.send("Invalid month. Too early in the year for next years schedule: "+months[curMonth()]+"\n(Correct if I'm wrong)");
     }
 
     // So we assume the site will switch over in May, so anything after that "current" will be next year, and we assume "prev-year" will start existing
