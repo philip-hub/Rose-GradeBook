@@ -85,7 +85,7 @@ async function publicSiteUp() {
 }
 
 
-async function getSections(year,username,password) {
+async function getSections(year) {
     // puppeteering
     const browser = await puppeteer.launch({
         headless: false,
@@ -95,7 +95,7 @@ async function getSections(year,username,password) {
     await page.goto(bannerSite, { timeout: 30000,
         waitUntil: "networkidle2"
       });
-      await waitSeconds(30); // very jank fix lol, slows down scraping a lol; this where I manually log in with 2FA
+      await waitSeconds(60); // very jank fix lol, slows down scraping a lol; this where I manually log in with 2FA
       console.log("LOG IN WITH 2FA IN 30 SECONDS CHALLENGE");
 
     
@@ -117,7 +117,7 @@ async function getSections(year,username,password) {
         // The dropdown in question
     let toChoose = await getOptions(page, year);
     let departments = await getDepartments(page);
-    let toRet = [];
+    let toRet = {};
     for (let key in toChoose) {
         await getOptionSections(page, year, key, toChoose, departments, toRet);
     }
@@ -131,6 +131,8 @@ async function getSections(year,username,password) {
 }
 
 async function getOptionSections(page, year, quarter, toChoose, departments, toRet) {
+    toRet[quarter] = {};
+
     let option = toChoose[quarter];
     // Goes through all courses by department
     for (let i = 0; i < departments.length; i++) {
@@ -186,7 +188,7 @@ async function getPageSections(page, year, quarter, toRet) {
         // if (i == 0) {
         //     console.log(toPush);
         // }
-        toRet.push(toPush);
+        toRet[quarter][id] = toPush;
     }
 }
 

@@ -2,9 +2,12 @@
 
 CREATE TABLE Courses (
   CourseID INT NOT NULL IDENTITY PRIMARY KEY,
-  [Name] VARCHAR(50) NOT NULL,
-  Dept VARCHAR(35) NULL,
-  Credits INT NULL,
+  [Name] VARCHAR(100) NOT NULL,
+  Dept VARCHAR(10) NOT NULL,
+  Credits FLOAT(24) NULL,
   [Number] VARCHAR(10) NOT NULL,
-  CONSTRAINT UC_Course UNIQUE ([Number],Dept)
+  [Year] DATE NOT NULL,
+  [Quarter] VARCHAR(10) NOT NULL,
+  CONSTRAINT UC_Course UNIQUE ([Number],Dept,[Year],[Quarter]),
+  CONSTRAINT Valid_Quarter CHECK( [Quarter] in ('Fall','Winter','Spring','Summer'))
 )

@@ -133,13 +133,16 @@ router.put('/load_courses/:year',async function(req,res) {
     res.end();
 });
 // Write all sections from banner site into 20XX_sectioninfo.json (depends on corresponding courseinfo.json). // Write all courses from public site into 20XX_courseinfo.json. Year specified is the later of xxxx-yyyy, aka the year the class of yyyy graduates
-router.put('/load_sections/:year/:username/:password',async function(req,res) {
+router.put('/load_sections/:year/',async function(req,res) {
     let curYear = ScrapingServices.thisYear();
     // Can't tell the future
     if (req.params.year > curYear+1) {
         res.send("Invalid year: "+req.params.year);
     }
-    let sections = await ScrapingServices.getSections(req.params.year,req.params.username, req.params.password);
+    if ((req.params.year == curYear+1 && ScrapingServices.curMonth() < 3)) {
+        res.send("Invalid month. Too early in the year for next years schedule: "+months[curMonth()]+"\n(Correct if I'm wrong)");
+    }
+    let sections = await ScrapingServices.getSections(req.params.year);
     // Load/use the collected course info while organizing 
     await ScrapingServices.writeSections(sections,req.params.year);
     
