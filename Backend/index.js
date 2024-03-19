@@ -13,6 +13,8 @@ var importEndpoints = require('./importEndpoints.js');
 app.use('/import_data',importEndpoints);
 var scrapingEndpoints = require('./scrapingEndpoints.js'); // Courses router
 app.use('/scraping',scrapingEndpoints);
+var applicationEndpoints = require('./applicationEndpoints.js'); // Courses router
+app.use('/application',applicationEndpoints);
 
 
 app.listen(8080);

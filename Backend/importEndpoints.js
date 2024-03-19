@@ -17,7 +17,7 @@ router.get('/load_data/:year', async function(req, res) {
         res.send("Invalid month. Too early in the year for next years schedule: "+months[curMonth()]+"\n(Correct if I'm wrong)");
     }
     if (!dirs_exists) {
-        res.send("This year's courses have not been scraped yet");
+        res.send("This year's courses and/or sections have not been scraped yet");
     }
     let courses = await fs.promises.readFile(coursepath);
     let sections = await fs.promises.readFile(sectionpath);
