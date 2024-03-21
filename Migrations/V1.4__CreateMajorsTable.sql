@@ -1,0 +1,6 @@
+CREATE TABLE UserMajors (
+  UserMajorID INT NOT NULL IDENTITY PRIMARY KEY,
+  UserID INT NOT NULL,
+  Major VARCHAR(50) NOT NULL,
+  FOREIGN KEY(UserID) References Users(UserID)
+)

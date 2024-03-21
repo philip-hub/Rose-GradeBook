@@ -7,52 +7,63 @@ const { DateTime } = require("luxon");
 var ApplicationServices = require('./Services/ApplicationServices.js');
 
 // Overview
-  // This API will allow for the maintenance and use of a webscraper for Rose-Hulman's publicly available course offerings as well as specific sections for user's with credentials
+  // This API will allow for all of the communication necessary for the frontend of OpenGradebook
 
-// Commands: 
-    // Verification (COMPLETE)
-        // NOTE: Someone has to have already done 2FA before this works. I am using my credentials for this
-        // Put - Overwrite old_banner_site.html. Only call when sure twe can process old_site.html
-        // Get - The banner site is up/we logged in right (or at least has the html we expect)
-        // Put - Overwrite old_public_site.html. Only call when sure we can process old_site.html
-        // Get - The public site is up/we logged in right (or at least has the html we expect)
-    // Data acquisition (COMPLETE)
-        // NOTE: We can make this more flexible and parametrize by year, professor, etc. to update information in only parts of the db but waiting for mongodb first since I don't want to implement allat in json
-        // NOTE: New folders for each new year represented, with each one containing the respective courses and sections jsons
-        // Put - Write all courses from public site into 20XX_courseinfo.json. Year specified is the later of xxxx-yyyy, aka the year the class of yyyy graduates
-            // courseinfo needs to be organized by department, then course id/name
-        // Put - Write all sections from banner site into 20XX_sectioninfo.json (depends on corresponding courseinfo.json). // Write all courses from public site into 20XX_courseinfo.json. Year specified is the later of xxxx-yyyy, aka the year the class of yyyy graduates
-            // sectioninfo needs to be organized by quarter, then department, then course id/name, then section/professor
-        // Put - maybe later, also getting all of the descriptions could be fun
-    // Data distribution - the fun stuff (IN PROGRESS)
-        // A bunch of Gets, basically anything an actual DB can do, mixing and matching parameters to yoink appropriate records. Implementing this will be herculean with jsons, so just wait for and leverage mongodb or mysql when it comes around
-        // Get - whether a class exists (to prevent invalid classes from being created)
-        // Get - whether a section exists (to prevent invalid sections from being created) (if their section is empty so far and invisible,
-        //       we'll ask if they can't find a section that anyone's been a part of; don't want to overwhelm with empty sections)
-        // Get - any non-empty classes
+  /*
+  - All requests will need a JWT in the header
+  - Only at most three can be generated, any more and the latest will be deleted
+    - Have the insert sproc do this automatically
+  - Will use this for user id
+    POST
+      1. Add user
+         a. Use a sproc to make sure the email isn't duplicated; if it is, send back a return value that indicates the user is already signed up
+            - Use enum for major; json file
+            - Make a majors table; have it reference users (1 to many)
+            - Also username and password minimum length, email formatting should be checked with https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email
+              - Email blacklist json cross referenced
+            - Add to the table whether or not why’re verified and salt stuff for email and password
+         b. Generate code and send to email
+            - Even without send to email, create a table that has users and the genereated code; deleted upon new code gen or successful verification
+      1c. Read takes
+        Options to include: 
+          user
+      2b. Insert Takes
+      3a. Input/update grade for specific take
+      9. Profile update SPROC
+        Takes in everything, writes everything if not null
+      11. Change password
+        Similar flow to sign up
+    GET
+      2a. Verify the code was was correct
+      - Delete verification code
+      3b. Calculate average from users
+        Options to include:
+          user
+          year
+          major
+          nothing for all for all
+      4. Search for class
+        Get all classes, filter on the front end https://www.cafebonappetit.com/
+      5. Get grade
+        Options to include: 
+          class
+          professor
+          user
+          Need JWT
+      8. Get classes
+        Options include: 
+          department
+        - Each will be sorted by number
+      10. Login endpoint
+        Options include: 
+        - Returned is JWT for API
+    DELETE
+      2c. Delete takes
+   */
 
-// ISSUES: 
-    // There seems to be a recurring issue relating to a failure to log in.
-        // It's resolved by manually logging into banner web, navigating to the schedule while logged in, and then logging out
-        // Potentially also just solved by waiting
-    // 2FA is a pain in the arse
-        // Potential solution: We'll have a get where we send in a username, password, and phone number
-        // Then we'll have a post where we send in the 2FA code
-    // Error: Requesting main frame too early!
-        // Seems to happen arbitrarily, just rerun
+//#region Read
+router.get('/read_courses/', async function(req, res) {
 
-// Read
-// RUN BEFORE FUTURE SCRAPING. Checks if the banner site is up/in the same format it was designed for
-router.get('/scraping_up/banner/:username/:password', async function(req, res) {
-    let content = await ScrapingServices.bannerSiteUp(req.params.username,req.params.password); // gets the banner site html
-    let prev = await fs.promises.readFile(archivedBannerSite);
-    res.send(content==prev?"banner scraping is up":"banner scraping is down. \nUsername/password may be incorrect: \nHow to encode special characters in URLs (e.g., '/' = %2F):\n https://www.w3schools.com/tags/ref_urlencode.ASP");
-});
-// RUN BEFORE FUTURE SCRAPING. Checks if the public site is up/in the same format it was designed for
-router.get('/scraping_up/public', async function(req, res) {
-    let content = await ScrapingServices.publicSiteUp(); // gets the public site html
-    let prev = await fs.promises.readFile(archivedPublicSite);
-    res.send(content==prev?"public scraping is up":"public scraping is down");
 });
 router.get('/get_classes/:year', async function(req, res) {
     let filepath = "data/"+req.params.year+"/"+req.params.year+"_courseinfo_courseset.json";
