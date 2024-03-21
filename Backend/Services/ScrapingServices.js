@@ -32,6 +32,7 @@ const bannerSite = 'https://prodwebxe-hv.rose-hulman.edu/regweb-cgi/reg-sched.pl
 function publicSite(year) { 
     return 'https://www.rose-hulman.edu/academics/course-catalog/'+year+'/index.html';
 };
+const majorsSite = 'https://www.rose-hulman.edu/academics/degrees-and-programs/majors.html';
 // We can get the last five years' course sites (all that matter) by subbing in 'xxxx-yyyy' where 'current' is, e.g., https://www.rose-hulman.edu/academics/course-catalog/2022-2023/index.html
 
 const archivedBannerSite = "data/old_banner_site.html"; // uses publicly
@@ -257,6 +258,27 @@ async function getCourses(year) {
     return toRet;
 }
 
+async function getMajors() {
+    // puppeteering
+    const browser = await puppeteer.launch({headless: true});
+    const page = await browser.newPage();
+    // Public course listing site
+    console.log("going to: "+majorsSite);
+    await page.goto(majorsSite, { timeout: 30000,waitUntil:"networkidle2" } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+
+    // await page.screenshot({path: 'files/screenshot5.png'});
+    
+    let toRet = [];
+    const nn = await page.$$(".container-style-basic-block-three-columns .content-block-title");
+    for (let i = 0; i < nn.length; i++) {
+        const n = nn[i];
+        const t = await( await n.getProperty('innerText') ).jsonValue(); // evaluate did not work in this scenario, don't 100% get why this does
+        toRet.push(t);
+    }
+
+    return toRet;
+}
+
 // Length changed because no longer at limit of course length
 async function hasNext(page, oldLen) {
     // return !!(await page.$("[ng-click=\"setCurrent(pagination.current + 1)\"]"));
@@ -346,6 +368,25 @@ async function writeSections(sections, year) {
     });
 }
 
+async function writeMajors(majors) {
+    let filepath = "data/";
+    let filename = "majorinfo";
+    let data = {majors};
+
+    // Lol it's like a demo of synchronous vs promises vs callbacks
+    let dir_exists = fs.existsSync(filepath);
+    if (!dir_exists) { // If the directory already exists
+        await fs.promises.mkdir(filepath,{ recursive: true });
+    }
+    fs.writeFile(filepath+filename+".json", JSON.stringify(data), function(err, buf ) {
+        if(err) {
+            console.log("error: ", err);
+        } else {
+            console.log("Data saved successfully!");
+        }
+    });
+}
+
 function curMonth(){
     return DateTime.now().month;
 }
@@ -371,3 +412,5 @@ exports.curMonth = curMonth;
 exports.writeCourses = writeCourses;
 exports.getSections = getSections;
 exports.writeSections = writeSections;
+exports.getMajors = getMajors;
+exports.writeMajors = writeMajors;

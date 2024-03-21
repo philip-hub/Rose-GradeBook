@@ -5,7 +5,7 @@ const fs = require("fs");
 var ImportServices = require('./Services/ImportServices.js');
 var ScrapingServices = require('./Services/ScrapingServices.js');
 
-router.get('/load_data/:year', async function(req, res) {
+router.post('/load_data/:year', async function(req, res) {
     let curYear = ScrapingServices.thisYear();
     let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
     

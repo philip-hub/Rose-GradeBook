@@ -1,5 +1,5 @@
 -- Call with all the different foods, looping through the dates and meal
-CREATE OR ALTER PROCEDURE insertUserMajor (@userid INT, @major varchar(50),@success INT OUTPUT)
+CREATE OR ALTER PROCEDURE insertUserMajor (@userid INT, @major varchar(50))
 AS
 BEGIN
 BEGIN TRANSACTION
