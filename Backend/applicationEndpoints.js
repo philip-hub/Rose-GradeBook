@@ -14,6 +14,7 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
   - Only at most three can be generated, any more and the latest will be deleted
     - Have the insert sproc do this automatically
   - Will use this for user id
+  - Use return parameters fora llof these tgo easdily assess errors and/or get outputs; use string appending to get more (multiple is hassle, but maybe a workaeound)
     POST
       1. Add user
          a. Use a sproc to make sure the email isn't duplicated; if it is, send back a return value that indicates the user is already signed up
@@ -24,18 +25,19 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
             - Add to the table whether or not why’re verified and salt stuff for email and password
          b. Generate code and send to email
             - Even without send to email, create a table that has users and the genereated code; deleted upon new code gen or successful verification
-      1c. Read takes
+      1c. Read takes - Just make it a select statement
         Options to include: 
           user
       2b. Insert Takes
-      3a. Input/update grade for specific take
+      3a. Update grade for specific take
       9. Profile update SPROC
         Takes in everything, writes everything if not null
       11. Change password
         Similar flow to sign up
     GET
-      2a. Verify the code was was correct
+      2a. Verify the code was was correct - sproc that return success and removes
       - Delete verification code
+      - Make a signups table - use have a limit on the number of users, delete from it if it's success
       3b. Calculate average from users
         Options to include:
           user
@@ -43,7 +45,9 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
           major
           nothing for all for all
       4. Search for class
-        Get all classes, filter on the front end https://www.cafebonappetit.com/
+        Two choices: 
+          Get all classes, filter on the front end https://www.cafebonappetit.com/
+          Use a sproc and filter on the backend with an index on the name like 333 group
       5. Get grade
         Options to include: 
           class

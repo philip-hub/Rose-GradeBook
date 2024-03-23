@@ -1,0 +1,2 @@
+ALTER TABLE Users
+ADD IsValidated BIT NOT NULL;
