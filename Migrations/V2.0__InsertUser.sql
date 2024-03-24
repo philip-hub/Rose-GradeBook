@@ -6,10 +6,22 @@
 --   Standing VARCHAR(10) NULL,
 --   [IsAdmin] BIT NOT NULL,
 
-CREATE OR ALTER PROCEDURE insertUser (@email varchar(35), @username varchar(10), @password varchar(50), @gpa float, @standing varchar(10), @isadmin bit, @majors varchar(150),@success INT OUTPUT)
+CREATE OR ALTER PROCEDURE insertUser (@email varchar(35), @username varchar(10), @password varchar(50), @isadmin bit, @majors varchar(150),@validationcode CHAR(4),@error VARCHAR OUTPUT)
 AS
 BEGIN
 BEGIN TRANSACTION
+
+IF ((SELECT COUNT(*) FROM Users WHERE Email=@email) > 0)
+BEGIN
+
+IF ((SELECT IsValidated FROM Users WHERE Email=@email) = 1)
+BEGIN
+ROLLBACK TRANSACTION;
+RETURN(4);
+END
+
+DELETE FROM Users WHERE Email=@email; 
+END
 
 DECLARE @separator varchar(1)=';'
 DECLARE @majors_split TABLE
@@ -31,7 +43,7 @@ END
 
 DECLARE @userid INT;
 
-INSERT INTO Users VALUES (@email,@username,@password,@gpa,@standing,@isadmin);
+INSERT INTO Users VALUES (@email,@username,@password,null,null,0,0);
 IF (@@ERROR <> 0)
 BEGIN
 ROLLBACK TRANSACTION;
@@ -56,6 +68,13 @@ BEGIN
     
     SET @counter = @counter + 1;
 END;
+
+INSERT INTO UserSignups VALUES (@userid,@validationcode);
+IF (@@ERROR <> 0)
+BEGIN
+ROLLBACK TRANSACTION;
+RETURN(5);
+END
 
 COMMIT TRANSACTION
 RETURN(0);

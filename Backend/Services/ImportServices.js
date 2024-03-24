@@ -46,9 +46,11 @@ const bulkLoadCourses = (courses, sections, year, connection) => {
   bulkLoad.addColumn('Name', types.VarChar, { length:100, nullable: false });
   bulkLoad.addColumn('Dept', types.VarChar, { length:10, nullable: false });
   bulkLoad.addColumn('Credits', types.Float, { nullable: true,precision:24 });
+  bulkLoad.addColumn('Professor', types.VarChar, { length:100, nullable: true }); // okay, so this isn't normalized, but I don't care
   bulkLoad.addColumn('Number', types.VarChar, { length:10, nullable: false });
   bulkLoad.addColumn('Year', types.Date, { nullable: false });
   bulkLoad.addColumn('Quarter', types.VarChar, { length:10,nullable: false });
+  bulkLoad.addColumn('CourseDeptAndNumber', types.VarChar, { length:20, nullable: true }); // only not calculated or efficiency tings
 
   // execute
   connection.execBulkLoad(bulkLoad, convertToCourseSchema(courses, sections, year));
@@ -82,9 +84,11 @@ function convertToCourseSchema(courses, sections, year) {
                   Name:courses_course.substring(0,100), // it's a name
                   Dept:dept.substring(0,10),
                   Credits:sections.sections[quarter][cname]["credit_hours"],
+                  Professor:sections.sections[quarter][cname]["professor"],
                   Number:cnum,
                   Year:newYearDate(year),
-                  Quarter:quarter
+                  Quarter:quarter,
+                  CourseDeptAndNumber:dept.substring(0,10)+cnum
               }
           );
             }

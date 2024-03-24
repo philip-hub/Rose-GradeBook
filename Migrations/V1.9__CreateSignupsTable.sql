@@ -1,0 +1,6 @@
+CREATE TABLE UserSignups (
+  UserSignupsID INT NOT NULL IDENTITY PRIMARY KEY,
+  UserID INT NOT NULL,
+  Code CHAR(4) NOT NULL,
+  FOREIGN KEY(UserID) References Users(UserID)
+)
