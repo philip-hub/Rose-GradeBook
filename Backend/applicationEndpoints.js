@@ -39,15 +39,18 @@ function responseTemplate(errors, value) {
         Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
       9. Profile update SPROC (user-specific)
         Takes in everything, writes everything if not null
+        - Will use a sproc and separate updates for each thing if not null
       11. Change password (user-specific)
-        Similar flow to sign up
+        Similar to profile update... actually just make it the same
     GET
       2a. Verify the code was was correct - sproc that return success and removes
       - Delete verification code
       - Make a signups table - use have a limit on the number of users, delete from it if it's success
-      3b. Calculate average from users
+      3b. Calculate average from users (from entered course data)
       - Live interactivity of this would be really sick
         - Out of scope for now; would have to do some realy fancy shit (sacing avg every hour, algebraically keeping up with a little list of diffs in num and den to get new avgs x the # of averages we want like this)
+      - Remind users to share their failures and successes; refactor the messaging to emphasize the benefit to everyone
+        - Something like "a community-driven, crowdsourced platform to help students make informed choice"
       - Needs to be a sproc because will need to get clean averages of each user (only the latest takes of each course by each user used in the average)
         - Summer is last, not first; link academic calendar on site front page too to advertise for future planning
         - We need a view of courses with only the coursedeptandname and the age (calculated from year and quarter; honestly could be as simple as sum of quarter as tenths digit and year kept the same [e.g. 2022.3 hey this actually kind of like reality lol, I could make the decimals all realistically for each quarter]) and courseid - these will give use the info we need for the join with takes
@@ -56,22 +59,33 @@ function responseTemplate(errors, value) {
       - Strategy will be to do a similar style filter as 3c with appendings; then this table is inserted into
         - If this succeeds, then we run the sproc with output param 2.7
           Options to include (filtering the users):
-          user (user-specific)
-          user year (standing)
-          major
-          double majors (all, not specific)
-          triple major (all, not specific)
-          nothing for all for all
+            user (user-specific)
+            user year (standing)
+            major
+            double majors (all, not specific)
+            triple major (all, not specific)
+            nothing for all for all
       3c. Calculate average from courses (based on all course fields; and their interserctions)
           - We can just use where statements appended to the query currently saved, run as a sqlsstatements
+          IMPORTANTE - For all THE AVERAGES, HAVEV 10 be thee threshold of dhowing data (loading bar displayed of have far untiol we reach necessary data)
           coursedeptandnumber
           class year
           quarter
           professor
           nothing for all for all
+      3d. Calculate averages from stated gpa
+          - Maybe give the user a little message if they match (like, congrats!)
+          - And like a gamified load bar on their profile of what % of their data has been entered by them
+          Options to include (filtering the users): - can just be a sql query with the following stuff appended in the where
+            - For appended to where conditions start with an always true (0 = 0) and then the ands appended
+            user (user-specific)
+            user year (standing)
+            major
+            double majors (all, not specific)
+            triple major (all, not specific)
+            nothing for all for all
       4. Search for class (https://www.algolia.com/blog/engineering/how-to-implement-autocomplete-with-javascript-on-your-website/)
-        Have frontend autocomplete using its own list of names
-          Options
+          Options - use sql for all of these, no need for anything else
             By description/nsame - Autocomplete names/substring search
             By course name and dept (e.g., CSSE220) - Autocomplete names/substring search
             By professor - Autocomplete names/substring search
@@ -82,17 +96,24 @@ function responseTemplate(errors, value) {
         Add endpoints for getting all of these as an arrays
         - Ooh one of the could return all the professors names but with first name first, other with last name first
         - Then the autocomplete results are given
-      8. Get classes
+      8. Get classes - this can be done with row sql and add a where with dept specification
+        Get department will be necessary too - also with sql
         Options include: 
           department
           none
         - Each will be sorted by coursedeptandnumber
-      10a. Login endpoint (user-specific)
-        Options include: 
-        - Returned is JWT for API
-      10b. JWT -> Keys
-        - Gives email, userid, and username or whatever other uniquely id info you want on users for your sproc
-      10c. Validate courseid
+      10a. Login endpoint
+        - Called automatically upon signup
+          - https://dvmhn07.medium.com/jwt-authentication-in-node-js-a-practical-guide-c8ab1b432a49
+          - Oooh the system I'm designing uses session-based storage: https://medium.com/@anandam00/understanding-session-based-authentication-in-nodejs-bc2a7b9e5a0b
+            - https://www.geeksforgeeks.org/session-cookies-in-node-js/
+              - THIS is how I should implement it, using this middleware for everything that needs auth
+                - https://www.tutorialspoint.com/expressjs/expressjs_authentication.htm
+                - we'll redirect to login and have that redirect to page after signup
+                - This method will give the email, userid desired because we'll recover it from the insert and login as output params
+      10b. Log out
+        - Sets user id session to null
+      10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
         - Makes sure given courseid is valid (called before anything that needs course id)
     DELETE
       2c. Delete takes (user-specific) - plain sql

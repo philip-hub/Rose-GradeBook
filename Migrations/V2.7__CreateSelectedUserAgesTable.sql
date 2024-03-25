@@ -8,16 +8,8 @@
 
 CREATE TABLE SelectedUserAges (
   SelectedUserAgeID INT NOT NULL IDENTITY PRIMARY KEY,
-  CourseID INT,
-  CourseDeptAndNumber VARCHAR(20),
+  CourseDeptAndNumber VARCHAR(20), 
   Grade DECIMAL,
   Credits DECIMAL,
-  UserID INT,
-  Professor VARCHAR(100),
---  [Name] VARCHAR(100) NOT NULL, -- Don't need course names
-  Dept VARCHAR(10),
---  [Number] VARCHAR(10) NOT NULL, -- Don't need the number
-  [Year] DATE,
-  [Quarter] VARCHAR(10),
   [Time] DECIMAL
 )

@@ -10,22 +10,10 @@ AS
 BEGIN
 BEGIN TRANSACTION
 
---   SelectedUserAgeID INT NOT NULL IDENTITY PRIMARY KEY,
---   CourseID INT,
---   CourseDeptAndNumber VARCHAR(20),
---   Grade DECIMAL,
---   Credits DECIMAL,
---   UserID INT,
---   Professor VARCHAR(100),
--- --  [Name] VARCHAR(100) NOT NULL, -- Don't need course names
---   Dept VARCHAR(10),
--- --  [Number] VARCHAR(10) NOT NULL, -- Don't need the number
---   [Year] DATE,
---   [Quarter] VARCHAR(10),
---   [Time] DECIMAL
+DELETE FROM SelectedUserAges
 
 INSERT INTO SelectedUserAges
-   SELECT c.CourseID, c.CourseDeptAndNumber, t.Grade, c.Credits, t.UserID, c.Professor,c.Dept,c.[Year],c.[Quarter], "Time" =
+   SELECT c.CourseDeptAndNumber, t.Grade, c.Credits, "Time" =
       CASE
          WHEN c.[Quarter] = 'Fall' THEN 0+Year(c.[Year])
          WHEN c.[Quarter] = 'Winter' THEN 0.25+Year(c.[Year])

@@ -6,7 +6,7 @@
 --   Standing VARCHAR(10) NULL,
 --   [IsAdmin] BIT NOT NULL,
 
-CREATE OR ALTER PROCEDURE insertUser (@email varchar(35), @username varchar(10), @password varchar(50), @isadmin bit, @majors varchar(150),@validationcode CHAR(4),@error VARCHAR OUTPUT)
+CREATE OR ALTER PROCEDURE insertUser (@email varchar(35),@username varchar(10),@password varchar(50),@gpa decimal, @standing varchar(10),@isadmin bit,@majors varchar(150),@validationcode CHAR(4),@userid INT OUTPUT)
 AS
 BEGIN
 BEGIN TRANSACTION
@@ -40,8 +40,6 @@ BEGIN
 ROLLBACK TRANSACTION;
 RETURN(3);
 END
-
-DECLARE @userid INT;
 
 INSERT INTO Users VALUES (@email,@username,@password,null,null,0,0);
 IF (@@ERROR <> 0)
