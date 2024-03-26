@@ -107,10 +107,11 @@ function responseTemplate(errors, value) {
           - https://dvmhn07.medium.com/jwt-authentication-in-node-js-a-practical-guide-c8ab1b432a49
           - Oooh the system I'm designing uses session-based storage: https://medium.com/@anandam00/understanding-session-based-authentication-in-nodejs-bc2a7b9e5a0b
             - https://www.geeksforgeeks.org/session-cookies-in-node-js/
-              - THIS is how I should implement it, using this middleware for everything that needs auth
+              
+              - THIS (below) is how I should implement it, using this middleware for everything that needs auth
                 - https://www.tutorialspoint.com/expressjs/expressjs_authentication.htm
                 - we'll redirect to login and have that redirect to page after signup
-                - This method will give the email, userid desired because we'll recover it from the insert and login as output params
+                - This method will give the userid desired because we'll recover it from the insert and login as output params
       10b. Log out
         - Sets user id session to null
       10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
