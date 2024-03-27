@@ -121,17 +121,70 @@ function responseTemplate(errors, value) {
         No need to validate, I think; delete won't violate foreign key by not doing anything
    */
 
+/**
+exports.createUser = createUser; --
+exports.readUser = readUser; --
+exports.updateUser = updateUser; --
+exports.updatePassword = updatePassword; --
+
+exports.createTake = createTake; --
+exports.readTakes = readTakes; --
+exports.updateTake = updateTake; --
+exports.deleteTake = deleteTake; --
+
+exports.readCourses = readCourses; --
+exports.validateCourseID = validateCourseID; --
+
+exports.isValidated = isValidated; --
+exports.validateUser = validateUser; --
+exports.login = login; --
+ */
+
+// POST
+router.post('/user', async function(req, res) { // use embed options
+
+});
+router.post('/take', async function(req, res) {
+
+});
+
 // GET
+router.get('/user', async function(req, res) { // use embed options
+
+});
+router.get('/take', async function(req, res) {
+
+});
 router.get('/courses', async function(req, res) {
 
 });
-// TODO have it insert into special table
-router.get('/generate_code', async function(req, res) {
-    res.send(ApplicationServices.generateTemporaryCode());
+router.get('/login', async function(req, res) {
+
+});
+router.get('/logout', async function(req, res) {
+
 });
 
-// POST
+// PUT
+router.put('/user', async function(req, res) { // use embed options
+  
+});
+router.put('/take', async function(req, res) {
+  
+});
+router.put('/courses', async function(req, res) {
+  
+});
+router.put('/password', async function(req, res) { // use embed options
+  
+});
+router.put('/validate_user', async function(req, res) {
+
+});
 
 // DELETE
+router.delete('/take', async function(req, res) {
+
+});
 
 module.exports = router;

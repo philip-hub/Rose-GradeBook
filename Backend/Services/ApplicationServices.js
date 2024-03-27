@@ -1,6 +1,7 @@
 // Method prefixes
     // Create - Write to DB
     // Read - Pull from DB
+        // Could be plural
     // Update - Update in DB
 
 var express = require('express');
@@ -24,12 +25,12 @@ const { DateTime } = require("luxon");
 async function createUser (email,username,password,gpa,standing,isadmin,majors,validationcode,userid) { // returns user id for session
 
     if (!checkValidMajors(majors)) {
-        return "One or more majors entered incorrectly";
+        return generateMessage(false,"One or more majors entered incorrectly");
     }
 
     let connection = await getNewConnection(false,false);
 
-    const request = new RequestM('insertMealAndStatus', (err, rowCount) => {
+    const request = new RequestM('insertUser', (err, rowCount) => {
         if (err) { 
             return generateMessage(false,err);
         }
@@ -39,9 +40,15 @@ async function createUser (email,username,password,gpa,standing,isadmin,majors,v
     // @password varchar(50),@gpa decimal, @standing varchar(10),
     // @isadmin bit,@majors varchar(150),@validationcode CHAR(4),
     // @userid INT OUTPUT)
-    request.addParameter('day', types.Date, new Date(formattedDate(day)));
-    request.addParameter('meal', types.VarChar, meal);
-    request.addOutputParameter('restaurantmealid', types.Int);
+    request.addParameter('email', types.VarChar, email);
+    request.addParameter('username', types.VarChar, username);
+    request.addParameter('password', types.VarChar, password);
+    request.addParameter('gpa', types.Decimal, gpa);
+    request.addParameter('standing', types.VarChar, standing);
+    request.addParameter('isadmin', types.Bit, booleanToBit(isadmin));
+    request.addParameter('majors', types.VarChar, majors);
+    request.addParameter('validationcode', types.Char, validationcode);
+    request.addOutputParameter('userid', types.Int);
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
@@ -59,14 +66,14 @@ async function readUser (userid) {
 
         const connection = await getNewConnection(false,true);
 
-        let sql = 'select * from Food where RestaurantMealID = @mealid';
+        let sql = 'select * from Users where UserID = @userid';
         let request = new RequestM(sql, function (err, rowCount, rows) {
             if (err) {
-                throw err;
+                return generateMessage(false,err);
             }
         });
 
-        request.addParameter('mealid', types.Int, restaurantmealid);
+        request.addParameter('userid', types.Int, userid);
 
         connection.execSql(request);
 
@@ -79,16 +86,16 @@ async function readUser (userid) {
         
         // Here's the magic: the then() function returns a new promise, different from the original:
             // So if we await that then we're good on everything in the thens
-        return toRet[0];
+        return generateMessage(toRet.length==1,toRet.length==1?toRet[0]:"Didn't return 1 user");
 }
 async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majors) {
     if (!checkValidMajors(majors)) {
-        return "One or more majors entered incorrectly";
+        return generateMessage(false,"One or more majors entered incorrectly");
     }
 
     let connection = await getNewConnection(false,false);
 
-    const request = new RequestM('insertMealAndStatus', (err, rowCount) => {
+    const request = new RequestM('updateProfile', (err, rowCount) => {
         if (err) { 
             return generateMessage(false,err);
         }
@@ -98,9 +105,13 @@ async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majo
     // @password varchar(50),@gpa decimal, 
     // @standing varchar(10),@isadmin bit,
     // @isvalidated bit,@majors varchar(150))
-    request.addParameter('day', types.Date, new Date(formattedDate(day)));
-    request.addParameter('meal', types.VarChar, meal);
-    request.addOutputParameter('restaurantmealid', types.Int);
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('password', types.VarChar, password);
+    request.addParameter('gpa', types.Decimal, gpa);
+    request.addParameter('standing', types.VarChar, standing);
+    request.addParameter('isadmin', types.Bit, booleanToBit(isadmin));
+    request.addParameter('isvalidated', types.Bit, booleanToBit(isvalidated));
+    request.addParameter('majors', types.VarChar, majors);
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
@@ -115,16 +126,16 @@ async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majo
 async function updatePassword(password,userid,newPassword){
     let connection = await getNewConnection(false,false);
 
-    const request = new RequestM('insertMealAndStatus', (err, rowCount) => {
+    const request = new RequestM('changePassword', (err, rowCount) => {
         if (err) { 
             return generateMessage(false,err);
         }
         connection.close();
     });
 // (@password varchar(50), @userid int, @newPassword varchar(50))
-    request.addParameter('day', types.Date, new Date(formattedDate(day)));
-    request.addParameter('meal', types.VarChar, meal);
-    request.addOutputParameter('restaurantmealid', types.Int);
+    request.addParameter('password', types.VarChar, password);
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('newPassword', types.VarChar, newPassword);
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
@@ -141,55 +152,22 @@ async function updatePassword(password,userid,newPassword){
 
 //#region Takes
 
-// 1c. Read takes - Just make it a select statement (user-specific)
-// Options to include: 
-//   user
+// 2b. Insert Takes (user-specific)
 
-async function readTakes (userid) {
-    let toRet = [];
-
-        const connection = await getNewConnection(false,true);
-
-        let sql = 'select * from Food where RestaurantMealID = @mealid';
-        let request = new RequestM(sql, function (err, rowCount, rows) {
-            if (err) {
-                throw err;
-            }
-        });
-
-        request.addParameter('mealid', types.Int, restaurantmealid);
-
-        connection.execSql(request);
-
-        let rows2 = await execSqlRequestDonePromise (request);
-        rows2.forEach((columns) => {
-            let toPush = 
-            convertFromTakeSchema(columns);
-            toRet.push(toPush);
-        });
-        
-        // Here's the magic: the then() function returns a new promise, different from the original:
-            // So if we await that then we're good on everything in the thens
-        return toRet;
-}
-
-// 2b. Insert Takes (user-specific)/
-// 3a. Update grade for specific take (user-specific)
-// Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
-
-async function insertTake (userid,courseid,grade) { // returns user id for session
+async function createTake (userid,courseid,grade) { // returns user id for session
     let connection = await getNewConnection(false,false);
 
-    const request = new RequestM('insertMealAndStatus', (err, rowCount) => {
+    const request = new RequestM('insertUpdateTakes', (err, rowCount) => {
         if (err) { 
             return generateMessage(false,err);
         }
         connection.close();
     });
+
     // @userid INT,@courseid INT,@grade DECIMAL
-    request.addParameter('day', types.Date, new Date(formattedDate(day)));
-    request.addParameter('meal', types.VarChar, meal);
-    request.addOutputParameter('restaurantmealid', types.Int);
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('courseid', types.Int, courseid);
+    request.addParameter('grade', types.Decimal, grade);
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
@@ -201,9 +179,44 @@ async function insertTake (userid,courseid,grade) { // returns user id for sessi
     let retval = await callProcedureRequestFinalReturnPromise (request);
     return generateMessage(retval==0,retval==0?"Successfully added/updated taking a class!":"Error message; todo, implement varied error messages based on the return value");
 }
+
+// 1c. Read takes - Just make it a select statement (user-specific)
+// Options to include: 
+//   user
+
+async function readTakes (userid) {
+    let toRet = [];
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select * from Takes where UserID = @userid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid);
+
+    connection.execSql(request);
+
+    let rows2 = await execSqlRequestDonePromise (request);
+    rows2.forEach((columns) => {
+        let toPush = 
+        convertFromTakeSchema(columns);
+        toRet.push(toPush);
+    });
+    
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(true,toRet);
+}
+
+// 3a. Update grade for specific take (user-specific)
+// Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
+
 async function updateTake (userid,courseid,grade) {
 // @userid INT,@courseid INT,@grade DECIMAL
-    return await insertTake(userid,courseid,grade);
+    return await createTake(userid,courseid,grade);
 }
 
 // 2c. Delete takes (user-specific) - plain sql
@@ -211,17 +224,17 @@ async function updateTake (userid,courseid,grade) {
 async function deleteTake(userid,courseid) {
     const connection = await getNewConnection(false,true);
 
-    let sql = 'select RestaurantMealID from RestaurantMeal where meal = @meal AND day = @date';
-        let request = new RequestM(sql, function (err, rowCount, rows) {
-            if (err) {
-                return generateMessage(false,err);
-            }
-        });
+    let sql = 'delete from Takes where userid = @userid AND courseid = @courseid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
 
-        request.addParameter('date', types.Date, new Date(formattedDate(day)));
-        request.addParameter('meal', types.VarChar, meal);
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('courseid', types.Int, courseid);
 
-        connection.execSql(request);
+    connection.execSql(request);
 
     request.on('error', function (err) {
         return generateMessage(false,err);
@@ -233,7 +246,71 @@ async function deleteTake(userid,courseid) {
 
 //#endregion
 
-//#region Averages
+//#region Classes
+// 8. Get classes - this can be done with row sql and add a where with dept specification
+//         Get department will be necessary too - also with sql
+//         Options include: 
+//           department
+//           courseid
+//           none
+//         - Each will be sorted by coursedeptandnumber
+
+async function readCourses (department,courseid) {
+    let toRet = [];
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select * from Courses where 0=0';
+    if (department) { sql += " and Dept=@department" }
+    if (courseid) { sql += " and CourseID=@courseid" }
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    if (department) { request.addParameter('department', types.Int, department); }
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+
+    connection.execSql(request);
+
+    let rows2 = await execSqlRequestDonePromise (request);
+    rows2.forEach((columns) => {
+        let toPush = 
+        convertFromCourseSchema(columns);
+        toRet.push(toPush);
+    });
+        
+    return generateMessage(true,toRet);
+}
+
+// 10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
+// - Makes sure given courseid is valid (called before anything that needs course id)
+
+async function validateCourseID (courseid) {
+    const connection = await getNewConnection(false,true);
+    let sql = 'select COUNT(*) from Courses where CourseID=@courseid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('courseid', types.Int, courseid); 
+    connection.execSql(request);
+    let rows1 = await execSqlRequestDonePromise (request);
+    let numCourses = rows1[0][0].value; // first (and only) row, first (and only) column
+    
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(numCourses == 1,numCourses == 1?"Successfully validated course!":"Error message; todo, implement varied error messages based on the return value");
+}
+
+//#endregion
+
+//#endregion
+
+//#region (TODO) Averages
 // 3b. Calculate average from users (from entered course data)
 // - Live interactivity of this would be really sick
 //   - Out of scope for now; would have to do some realy fancy shit (sacing avg every hour, algebraically keeping up with a little list of diffs in num and den to get new avgs x the # of averages we want like this)
@@ -275,7 +352,7 @@ async function deleteTake(userid,courseid) {
 
 //#endregion
 
-//#region Search
+//#region (TODO) Get Search Data
 // 4. Search for class (https://www.algolia.com/blog/engineering/how-to-implement-autocomplete-with-javascript-on-your-website/)
 // Options - use sql for all of these, no need for anything else
 //   By description/nsame - Autocomplete names/substring search
@@ -291,20 +368,6 @@ async function deleteTake(userid,courseid) {
 
 //#endregion
 
-//#region Classes
-// 8. Get classes - this can be done with row sql and add a where with dept specification
-//         Get department will be necessary too - also with sql
-//         Options include: 
-//           department
-//           none
-//         - Each will be sorted by coursedeptandnumber
-
-// 10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
-// - Makes sure given courseid is valid (called before anything that needs course id)
-//#endregion
-
-//#endregion
-
 //#region Authentication
 
 // TODO
@@ -312,25 +375,23 @@ async function deleteTake(userid,courseid) {
 async function isValidated(userid) {
     const connection = await getNewConnection(false,true);
 
-    let sql = 'select RestaurantMealID from RestaurantMeal where meal = @meal AND day = @date';
-        let request = new RequestM(sql, function (err, rowCount, rows) {
-            if (err) {
-                return generateMessage(false,err);
-            }
-        });
+    let sql = 'select IsValidated from Users where userid = @userid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
 
-        request.addParameter('date', types.Date, new Date(formattedDate(day)));
-        request.addParameter('meal', types.VarChar, meal);
+    request.addParameter('userid', types.Int, userid);
 
-        connection.execSql(request);
+    connection.execSql(request);
 
     request.on('error', function (err) {
         return generateMessage(false,err);
     });
     let rows1 = await execSqlRequestDonePromise(request);
-    let isValidated = rows1[0][0].value; // first (and only) row, first (and only) column
-
-    return generateMessage(true,!(!isValidated));
+    
+    return generateMessage(rows1.length==1,(rows1.length==1)?(!(!rows1[0][0].value)):"Didn't return 1 user");
 }
 
 // 2a. Verify the code was was correct - sproc that return success and removes
@@ -340,7 +401,7 @@ async function isValidated(userid) {
 async function validateUser(userid,validationcode) {
     let connection = await getNewConnection(false,false);
 
-    const request = new RequestM('insertMealAndStatus', (err, rowCount) => {
+    const request = new RequestM('validateUser', (err, rowCount) => {
         if (err) { 
             return generateMessage(false,err);
         }
@@ -348,9 +409,8 @@ async function validateUser(userid,validationcode) {
     });
 
     // @userid INT,@validationcode
-    request.addParameter('day', types.Date, new Date(formattedDate(day)));
-    request.addParameter('meal', types.VarChar, meal);
-    request.addOutputParameter('restaurantmealid', types.Int);
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('validationcode', types.Char, validationcode);
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
@@ -364,18 +424,28 @@ async function validateUser(userid,validationcode) {
 }
 
 // 10a. Login endpoint - sql
+    // TODO Use salting on the table's and AddParameters' values
 async function login(username, email, password) {
+    if (!username && !email) {
+        return generateMessage(false,"Enter username or email");
+    }
+
     const connection = await getNewConnection(false,true);
+    let sql = 'select COUNT(*) from Users where password=@password';
 
-    let sql = 'select RestaurantMealID from RestaurantMeal where meal = @meal AND day = @date';
-        let request = new RequestM(sql, function (err, rowCount, rows) {
-            if (err) {
-                return generateMessage(false,err);
-            }
-        });
+    if (username) { sql += " and Username=@username" }
+    if (email) { sql += " and Email=@email" }
 
-        request.addParameter('date', types.Date, new Date(formattedDate(day)));
-        request.addParameter('meal', types.VarChar, meal);
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('password', types.VarChar, password);
+    if (username) { request.addParameter('username', types.VarChar, username); }
+    if (email) { request.addParameter('email', types.VarChar, email); }
+
 
         connection.execSql(request);
 
@@ -383,9 +453,9 @@ async function login(username, email, password) {
         return generateMessage(false,err);
     });
     let rows1 = await execSqlRequestDonePromise(request);
-    let userid = rows1[0][0].value; // first (and only) row, first (and only) column
+    let numUsers = rows1[0][0].value; // first (and only) row, first (and only) column
 
-    return generateMessage(true,userid);
+    return generateMessage(numUsers==1,numUsers==1?"Successfully logged user in!":"Incorrect username or password.");
 }
 
 // 10b. Log out - no need for a function just set userid to null in session
@@ -508,6 +578,51 @@ function getRandomInt(max) {
 //#endregion
 
 //#region Schema Conversions
+
+function convertFromCourseSchema(row) {
+    let courseid = 0;
+    let name = "";
+    let dept = "";
+    let credits = 0;
+    let professor = "";
+    let year = "";
+    let quarter = "";
+    let coursedeptandnumber = "";
+
+    row.forEach((column) => {
+            let colName = column.metadata.colName;
+            switch (colName) {
+                case 'CourseID':
+                    courseid = column.value;
+                    break;
+                case 'Name':
+                    name = column.value;
+                    break;
+                case 'Dept':
+                    dept = column.value;
+                    break;
+                case 'Credits':
+                    credits = column.value;
+                    break;
+                case 'Professor':
+                    professor = column.value;
+                    break;
+                case 'Year':
+                    year = column.value.slice(-5);
+                    break;
+                case 'Quarter':
+                    quarter = column.value;
+                    break;
+                case 'CourseDeptAndNumber':
+                    coursedeptandnumber = column.value;
+                    break;
+                default:
+                  console.log(`New column name?!: ${colName}`);
+              }
+        });
+    return {courseid:courseid,name:name,dept:dept,credits:credits,professor:professor,year:year,quarter:quarter,coursedeptandnumber:coursedeptandnumber};
+}
+
 function convertFromUserSchema(row) {
     let email = "";
     let username = "";
@@ -561,8 +676,25 @@ function convertFromTakeSchema(row) {
         });
             // the front end should also recoil in horror, separately
                 // There should be a strikethrough /graying out of any non-veg in reqs or general list
-    return {userid:userid,courseid:courseid,grade:grade};
+    return {userid:userid,grade:grade,course:convertFromCourseSchema(row)};
 }
 //#endregion
+
+exports.createUser = createUser;
+exports.readUser = readUser;
+exports.updateUser = updateUser;
+exports.updatePassword = updatePassword;
+
+exports.createTake = createTake;
+exports.readTakes = readTakes;
+exports.updateTake = updateTake;
+exports.deleteTake = deleteTake;
+
+exports.readCourses = readCourses;
+exports.validateCourseID = validateCourseID;
+
+exports.isValidated = isValidated;
+exports.validateUser = validateUser;
+exports.login = login;
 
 exports.generateTemporaryCode = generateTemporaryCode;

@@ -1,40 +1,31 @@
-CREATE OR ALTER PROCEDURE validateUser (@email varchar(35),@validationcode CHAR(4),@success INT OUTPUT)
+CREATE OR ALTER PROCEDURE validateUser (@userid INT,@validationcode CHAR(4))
 AS
 BEGIN
 BEGIN TRANSACTION
 
-IF ((SELECT COUNT(*) FROM Users WHERE Email=@email) = 0)
+DECLARE @nummatches int;
+SET @nummatches=(SELECT COUNT(*) FROM UserSignups WHERE UserID=@userid AND  Code=@validationcode)
+
+IF (@nummatches = 0) -- INSERT Check
 BEGIN
-ROLLBACK TRANSACTION;
 RETURN(1);
 END
 
-IF ((SELECT IsValidated FROM Users WHERE Email=@email) = 1)
+-- If it got here, it's an UPDATE of 1 record
+UPDATE Users SET IsValidated=1 WHERE UserID=@userid
+IF (@@ERROR <> 0)
 BEGIN
 ROLLBACK TRANSACTION;
 RETURN(2);
 END
 
-DECLARE @userid INT;
-SET @userid = (SELECT UserID FROM Users WHERE Email=@email);
-
-DECLARE @numMatches INT;
-SET @numMatches=(SELECT COUNT(*) FROM UserSignups WHERE UserID=@userid AND Code=@validationcode);
-
-IF (@numMatches = 0) -- Failed
+DELETE FROM UserSignups WHERE UserID=@userid
+IF (@@ERROR <> 0)
 BEGIN
 ROLLBACK TRANSACTION;
 RETURN(3);
 END
 
-DELETE FROM UserSignups WHERE UserID=@userid;
-IF (@@ERROR <> 0)
-BEGIN
-ROLLBACK TRANSACTION;
-RETURN(4);
-END
-
-COMMIT TRANSACTION
 RETURN(0);
 END
 GO
