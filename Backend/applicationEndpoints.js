@@ -4,6 +4,21 @@ var express = require('express');
 var router = express.Router();
 const fs = require("fs");
 const { DateTime } = require("luxon");
+
+var bodyParser = require('body-parser');
+var session = require('express-session');
+
+router.use(bodyParser.json());
+router.use(bodyParser.urlencoded({ extended: true })); 
+router.use(session(
+  {
+    secret: 'Super secret secret',
+    cookie: {},
+    resave: false,
+    saveUninitialized: true}
+
+));
+
 var ApplicationServices = require('./Services/ApplicationServices.js');
 
 function responseTemplate(errors, value) {
@@ -14,38 +29,16 @@ function responseTemplate(errors, value) {
   // This API will allow for all of the communication necessary for the frontend of OpenGradebook
 
   /*
-  - ALL requests will need a JWT in the header (limit 10 per user; also age restrict to 1 day)
-    - This will validate the session and also serve to authorize it to the user's authorization
-    - Use returned values for any user-specific actions (indicated below as "(user-specific)")
-      - Will use this for user id
-      - However, frontend should be given and ask with course ids if needed for any methods (ie altering Takes)
-        - However, this means wherever course ids are used, they must be validated
-  - Use return parameters fora llof these tgo easdily assess errors and/or get outputs; use string appending to get more (multiple is hassle, but maybe a workaeound)
     POST
-      1. Add user
-         a. Use a sproc to make sure the email isn't duplicated; if it is, send back a return value that indicates the user is already signed up if validated, if not replace old one
-            - Use enum for major; json file
-            - Make a majors table; have it reference users (1 to many)
-            - Also username and password minimum length, email formatting should be checked with https://developer.mozilla.org/en-US/docs/Web/HTML/Element/input/email
-              - Email blacklist json cross referenced
-            - Add to the table whether or not why’re verified and salt stuff for email and password
-         b. Generate code and send to email
-            - Even without send to email, create a table that has users and the genereated code; deleted upon new code gen or successful verification
       1c. Read takes - Just make it a select statement (user-specific)
         Options to include: 
           user
       2b. Insert Takes (user-specific)/
       3a. Update grade for specific take (user-specific)
         Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
-      9. Profile update SPROC (user-specific)
-        Takes in everything, writes everything if not null
-        - Will use a sproc and separate updates for each thing if not null
       11. Change password (user-specific)
         Similar to profile update... actually just make it the same
     GET
-      2a. Verify the code was was correct - sproc that return success and removes
-      - Delete verification code
-      - Make a signups table - use have a limit on the number of users, delete from it if it's success
       3b. Calculate average from users (from entered course data)
       - Live interactivity of this would be really sick
         - Out of scope for now; would have to do some realy fancy shit (sacing avg every hour, algebraically keeping up with a little list of diffs in num and den to get new avgs x the # of averages we want like this)
@@ -102,18 +95,6 @@ function responseTemplate(errors, value) {
           department
           none
         - Each will be sorted by coursedeptandnumber
-      10a. Login endpoint
-        - Called automatically upon signup
-          - https://dvmhn07.medium.com/jwt-authentication-in-node-js-a-practical-guide-c8ab1b432a49
-          - Oooh the system I'm designing uses session-based storage: https://medium.com/@anandam00/understanding-session-based-authentication-in-nodejs-bc2a7b9e5a0b
-            - https://www.geeksforgeeks.org/session-cookies-in-node-js/
-              
-              - THIS (below) is how I should implement it, using this middleware for everything that needs auth
-                - https://www.tutorialspoint.com/expressjs/expressjs_authentication.htm
-                - we'll redirect to login and have that redirect to page after signup
-                - This method will give the userid desired because we'll recover it from the insert and login as output params
-      10b. Log out
-        - Sets user id session to null
       10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
         - Makes sure given courseid is valid (called before anything that needs course id)
     DELETE
@@ -122,64 +103,146 @@ function responseTemplate(errors, value) {
    */
 
 /**
-exports.createUser = createUser; --
-exports.readUser = readUser; --
-exports.updateUser = updateUser; --
 exports.updatePassword = updatePassword; --
 
 exports.createTake = createTake; --
 exports.readTakes = readTakes; --
 exports.updateTake = updateTake; --
 exports.deleteTake = deleteTake; --
+*/
 
-exports.readCourses = readCourses; --
-exports.validateCourseID = validateCourseID; --
-
-exports.isValidated = isValidated; --
-exports.validateUser = validateUser; --
-exports.login = login; --
- */
+// Add examples to each endpoint
 
 // POST
-router.post('/user', async function(req, res) { // use embed options
-
+// TODO
+  // Add strong input validation to this one because it doesn't require valid session yet
+    // Like ensuring the length of the username and password
+    // Banned list emails referenced too
+      // Apologies, your email has been banned lol
+// Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=4.0&standing=Freshman&isadmin=1&majors=Physics;Computer Science
+router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
+  // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
+  let email = req.query.email;
+  let username = req.query.username;
+  let password = req.query.password;
+  let gpa = req.query.gpa;
+  let standing = req.query.standing;
+  let isadmin = req.query.isadmin;
+  let majors = req.query.majors;
+  
+  let validationcode = ApplicationServices.generateTemporaryCode();
+  let message = await ApplicationServices.createUser (email,username,password,gpa,standing,isadmin,majors,validationcode);
+  if (message.success) {
+    // TODO session stuff; a user was successfully created after all
+    // Also calling the email thing for the validation code
+    console.log("Validation Code: "+validationcode);
+    // res.redirect("/validate_user");
+    let userid = message.message;
+    req.session.userid = userid;
+    res.send("Successfully signed up!");
+  } else {
+    res.send(message.message);
+  }
 });
 router.post('/take', async function(req, res) {
 
 });
 
 // GET
-router.get('/user', async function(req, res) { // use embed options
-
+router.get('/user', async function(req, res) { // use query parameters
+  let userid = req.session.userid;
+  let message = await ApplicationServices.readUser(userid);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
 router.get('/take', async function(req, res) {
 
 });
 router.get('/courses', async function(req, res) {
+  // department,courseid
+  let department = req.query.department;
+  let courseid = req.query.courseid;
 
+  let message = await ApplicationServices.validateCourseID(courseid);
+  if (message.success) {
+    let message2 = await ApplicationServices.readCourses(department,courseid);
+    if (message2.success) {
+      res.send(message2.message);
+    } else {
+      res.send(message2.message);
+    }
+  } else {
+    res.send(message.message);
+  }
 });
-router.get('/login', async function(req, res) {
+// Example: http://localhost:8080/application/login?username=p&password=p
+router.get('/login', async function(req, res) { // should have a specific return for redirectinh to validstion or to the dashboard/any other page
+  let email = req.query.email;
+  let username = req.query.username;
+  let password = req.query.password;
 
+  let message = await ApplicationServices.login (username,email,password);
+  if (message.success) {
+    let userid = message.message;
+    req.session.userid = userid;
+    console.log("Pickford: "+req.session.userid);
+    let message2 = await ApplicationServices.isValidated(userid);
+    if (message2.success) {
+      // res.redirect("/home");
+      res.send(message2.message);
+    } else {
+      // res.redirect("/validate_user");
+      res.send(message2.message);
+    }
+  } else {
+    res.send(message.message);
+  }
 });
 router.get('/logout', async function(req, res) {
-
+  req.session.userid = null;
+  // res.redirect("/login");
+  res.send(
+    "Logged out!"
+  );
 });
 
 // PUT
-router.put('/user', async function(req, res) { // use embed options
-  
+router.put('/user', async function(req, res) { // use query parameters
+  let userid = req.query.userid;
+  let password = req.query.password;
+  let gpa = req.query.gpa;
+  let standing = req.query.standing;
+  let isadmin = req.query.isadmin;
+  let isvalidated = req.query.isvalidated;
+  let majors = req.query.majors;
+
+  let message = await ApplicationServices.updateUser (userid,password,gpa,standing,isadmin,isvalidated,majors);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
 router.put('/take', async function(req, res) {
   
 });
-router.put('/courses', async function(req, res) {
+router.put('/password', async function(req, res) { 
   
 });
-router.put('/password', async function(req, res) { // use embed options
-  
-});
+// Example: http://localhost:8080/application/validate_user?validationcode=3429
 router.put('/validate_user', async function(req, res) {
-
+  let userid = req.session.userid;
+  console.log("Suddenly: "+userid);
+  let validationcode = req.query.validationcode;
+  let message = await ApplicationServices.validateUser(userid, validationcode);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
 
 // DELETE

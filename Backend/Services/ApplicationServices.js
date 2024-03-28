@@ -22,7 +22,7 @@ const { DateTime } = require("luxon");
     //    - Add to the table whether or not why’re verified and salt stuff for email and password
     // b. Generate code and send to email
     //    - Even without send to email, create a table that has users and the genereated code; deleted upon new code gen or successful verification
-async function createUser (email,username,password,gpa,standing,isadmin,majors,validationcode,userid) { // returns user id for session
+async function createUser (email,username,password,gpa,standing,isadmin,majors,validationcode) { // returns user id for session
 
     if (!checkValidMajors(majors)) {
         return generateMessage(false,"One or more majors entered incorrectly");
@@ -50,6 +50,8 @@ async function createUser (email,username,password,gpa,standing,isadmin,majors,v
     request.addParameter('validationcode', types.Char, validationcode);
     request.addOutputParameter('userid', types.Int);
 
+    // console.log(request);
+
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
 
@@ -57,9 +59,9 @@ async function createUser (email,username,password,gpa,standing,isadmin,majors,v
         return generateMessage(false,err);
     });
 
-    let userid = await callProcedureRequestOutputParamPromise (request);
+    let userid = await callProcedureRequestOutputParamPromise (request);// this makes sense; it isn't sequential, it speedruns through and waits for both
     let retval = await callProcedureRequestFinalReturnPromise (request);
-    return generateMessage(retval==0,retval==0?userid:"Error message; todo, implement varied error messages based on the return value");
+    return generateMessage(retval==0,retval==0?userid:"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 async function readUser (userid) {
     let toRet = [];
@@ -74,10 +76,11 @@ async function readUser (userid) {
         });
 
         request.addParameter('userid', types.Int, userid);
-
         connection.execSql(request);
 
         let rows2 = await execSqlRequestDonePromise (request);
+        console.log("user id"+userid);
+        console.log("user id"+rows2);
         rows2.forEach((columns) => {
             let toPush = 
             convertFromUserSchema(columns);
@@ -121,7 +124,7 @@ async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majo
     });
 
     let retval = await callProcedureRequestFinalReturnPromise (request);
-    return generateMessage(retval==0,retval==0?"Successfully updated profile!":"Error message; todo, implement varied error messages based on the return value");
+    return generateMessage(retval==0,retval==0?"Successfully updated profile!":"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 async function updatePassword(password,userid,newPassword){
     let connection = await getNewConnection(false,false);
@@ -145,7 +148,7 @@ async function updatePassword(password,userid,newPassword){
     });
 
     let retval = await callProcedureRequestFinalReturnPromise (request);
-    return generateMessage(retval==0,retval==0?"Successfully updated password!":"Error message; todo, implement varied error messages based on the return value");
+    return generateMessage(retval==0,retval==0?"Successfully updated password!":"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 
 //#endregion
@@ -177,7 +180,7 @@ async function createTake (userid,courseid,grade) { // returns user id for sessi
     });
 
     let retval = await callProcedureRequestFinalReturnPromise (request);
-    return generateMessage(retval==0,retval==0?"Successfully added/updated taking a class!":"Error message; todo, implement varied error messages based on the return value");
+    return generateMessage(retval==0,retval==0?"Successfully added/updated taking a class!":"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 
 // 1c. Read takes - Just make it a select statement (user-specific)
@@ -303,7 +306,7 @@ async function validateCourseID (courseid) {
     
     // Here's the magic: the then() function returns a new promise, different from the original:
         // So if we await that then we're good on everything in the thens
-    return generateMessage(numCourses == 1,numCourses == 1?"Successfully validated course!":"Error message; todo, implement varied error messages based on the return value");
+    return generateMessage(numCourses == 1,numCourses == 1?"Successfully validated course!":"Error message; todo, implement varied error messages based on the return value: ");
 }
 
 //#endregion
@@ -391,7 +394,7 @@ async function isValidated(userid) {
     });
     let rows1 = await execSqlRequestDonePromise(request);
     
-    return generateMessage(rows1.length==1,(rows1.length==1)?(!(!rows1[0][0].value)):"Didn't return 1 user");
+    return generateMessage((rows1.length==1 && !(!rows1[0][0].value)),(rows1.length==1 && !(!rows1[0][0].value))?"Successfully validated user!":"Didn't return 1 user");
 }
 
 // 2a. Verify the code was was correct - sproc that return success and removes
@@ -414,13 +417,13 @@ async function validateUser(userid,validationcode) {
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
-
+ 
     request.on('error', function (err) {
         return generateMessage(false,err);
     });
 
     let retval = await callProcedureRequestFinalReturnPromise (request);
-    return generateMessage(retval==0,retval==0?"Successfully validated user!":"Error message; todo, implement varied error messages based on the return value");
+    return generateMessage(retval==0,retval==0?"Successfully validated user!":"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 
 // 10a. Login endpoint - sql
@@ -431,7 +434,7 @@ async function login(username, email, password) {
     }
 
     const connection = await getNewConnection(false,true);
-    let sql = 'select COUNT(*) from Users where password=@password';
+    let sql = 'select UserID from Users where password=@password';
 
     if (username) { sql += " and Username=@username" }
     if (email) { sql += " and Email=@email" }
@@ -453,9 +456,8 @@ async function login(username, email, password) {
         return generateMessage(false,err);
     });
     let rows1 = await execSqlRequestDonePromise(request);
-    let numUsers = rows1[0][0].value; // first (and only) row, first (and only) column
-
-    return generateMessage(numUsers==1,numUsers==1?"Successfully logged user in!":"Incorrect username or password.");
+    let numUsers = rows1.length; // first (and only) row, first (and only) column
+    return generateMessage(numUsers==1,numUsers==1?rows1[0][0].value:"Incorrect username or password.");
 }
 
 // 10b. Log out - no need for a function just set userid to null in session
@@ -509,7 +511,7 @@ const callProcedureRequestFinalReturnPromise = (request) => {
 }
 
 async function getNewConnection(rowCollectionOnRequestCompletion,rowCollectionOnDone) {
-    var config = JSON.parse(fs.readFileSync("../connectivity_config.json"));
+    var config = JSON.parse(fs.readFileSync("connectivity_config.json"));
     config.options.rowCollectionOnRequestCompletion = rowCollectionOnRequestCompletion;
     config.options.rowCollectionOnDone = rowCollectionOnDone;
     let toRet = new ConnectionM(config);
@@ -549,8 +551,8 @@ function checkValidMajors(majorsstr) {
 }
 
 function checkValidMajor(major) {
-    let majors = JSON.parse(fs.readFileSync("data/majorinfo.json"));
-    return majors.hasOwnProperty(major);
+    let majors = JSON.parse(fs.readFileSync("data/majorinfo.json")).majors;
+    return majors.includes(major);
 }
 
 function booleanToBit(bool) {

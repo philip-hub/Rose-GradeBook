@@ -41,7 +41,7 @@ ROLLBACK TRANSACTION;
 RETURN(3);
 END
 
-INSERT INTO Users VALUES (@email,@username,@password,null,null,0,0);
+INSERT INTO Users VALUES (@email,@username,@password,@standing,0,0,@gpa);
 IF (@@ERROR <> 0)
 BEGIN
 ROLLBACK TRANSACTION;
