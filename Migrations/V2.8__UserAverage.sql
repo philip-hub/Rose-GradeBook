@@ -5,7 +5,7 @@
 
 -- So this one will convert the two columns by using an epressino in the select after the group by
    -- Group by coursedeptandnumber
-CREATE OR ALTER PROCEDURE userAverage(@userid int,@average DECIMAL OUTPUT)
+CREATE OR ALTER PROCEDURE userAverage(@userid int,@average FLOAT OUTPUT)
 AS
 BEGIN
 BEGIN TRANSACTION

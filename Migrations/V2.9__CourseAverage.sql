@@ -9,7 +9,7 @@
         --   professor
         --   nothing for all for all
 
-CREATE OR ALTER PROCEDURE courseAverage(@courseid int,@average DECIMAL OUTPUT)
+CREATE OR ALTER PROCEDURE courseAverage(@courseid int,@average FLOAT OUTPUT)
 AS
 BEGIN
 BEGIN TRANSACTION

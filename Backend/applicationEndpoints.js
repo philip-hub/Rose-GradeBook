@@ -29,15 +29,6 @@ function responseTemplate(errors, value) {
   // This API will allow for all of the communication necessary for the frontend of OpenGradebook
 
   /*
-    POST
-      1c. Read takes - Just make it a select statement (user-specific)
-        Options to include: 
-          user
-      2b. Insert Takes (user-specific)/
-      3a. Update grade for specific take (user-specific)
-        Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
-      11. Change password (user-specific)
-        Similar to profile update... actually just make it the same
     GET
       3b. Calculate average from users (from entered course data)
       - Live interactivity of this would be really sick
@@ -89,37 +80,13 @@ function responseTemplate(errors, value) {
         Add endpoints for getting all of these as an arrays
         - Ooh one of the could return all the professors names but with first name first, other with last name first
         - Then the autocomplete results are given
-      8. Get classes - this can be done with row sql and add a where with dept specification
-        Get department will be necessary too - also with sql
-        Options include: 
-          department
-          none
-        - Each will be sorted by coursedeptandnumber
-      10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
-        - Makes sure given courseid is valid (called before anything that needs course id)
-    DELETE
-      2c. Delete takes (user-specific) - plain sql
-        No need to validate, I think; delete won't violate foreign key by not doing anything
    */
 
-/**
-exports.updatePassword = updatePassword; --
-
-exports.createTake = createTake; --
-exports.readTakes = readTakes; --
-exports.updateTake = updateTake; --
-exports.deleteTake = deleteTake; --
-*/
-
-// Add examples to each endpoint
-
 // POST
-// TODO
-  // Add strong input validation to this one because it doesn't require valid session yet
-    // Like ensuring the length of the username and password
-    // Banned list emails referenced too
-      // Apologies, your email has been banned lol
-// Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=4.0&standing=Freshman&isadmin=1&majors=Physics;Computer Science
+// TODO: WHY DOES IT FREEZE UP SOMETIMES??
+
+// Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=4.0&standing=Freshman&isadmin=true&majors=Physics;Computer Science
+  // TODO I think isadmin is broken
 router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
   // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
   let email = req.query.email;
@@ -139,16 +106,32 @@ router.post('/signup', async function(req, res) { // use query parameters: https
     // res.redirect("/validate_user");
     let userid = message.message;
     req.session.userid = userid;
-    res.send("Successfully signed up!");
+    res.send(message.success);
+  } else {
+    res.send(message.success);
+  }
+});
+// Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
+router.post('/take', async function(req, res) {
+  // userid,courseid,grade
+  let userid = req.session.userid;
+  let courseid = req.query.courseid;
+  let grade = req.query.grade;
+
+  let message = await ApplicationServices.createTake(userid,courseid,grade);
+  if (message.success) {
+    res.send(message.message);
   } else {
     res.send(message.message);
   }
 });
-router.post('/take', async function(req, res) {
-
-});
 
 // GET
+// router.get('/userid', async function(req, res) {
+//   //FOR TESTING, DELETE
+//   res.send("usrid: "+req.session.userid);
+// });
+// Example: http://localhost:8080/application/user
 router.get('/user', async function(req, res) { // use query parameters
   let userid = req.session.userid;
   let message = await ApplicationServices.readUser(userid);
@@ -158,27 +141,35 @@ router.get('/user', async function(req, res) { // use query parameters
     res.send(message.message);
   }
 });
+// Example: http://localhost:8080/application/take
 router.get('/take', async function(req, res) {
-
+  let userid = req.session.userid;
+  let message = await ApplicationServices.readTakes(userid);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
+
+// TODO Figure out if we need to validate department as well
+// Example: http://localhost:8080/application/courses
+// Example: http://localhost:8080/application/courses?department=MA
 router.get('/courses', async function(req, res) {
   // department,courseid
   let department = req.query.department;
   let courseid = req.query.courseid;
 
-  let message = await ApplicationServices.validateCourseID(courseid);
-  if (message.success) {
     let message2 = await ApplicationServices.readCourses(department,courseid);
     if (message2.success) {
       res.send(message2.message);
     } else {
-      res.send(message2.message);
+      res.send("Course ID invalid");
     }
-  } else {
-    res.send(message.message);
-  }
 });
 // Example: http://localhost:8080/application/login?username=p&password=p
+// TODO
+  // Need to call isValidated afterwards; depending on the result, redirect appropriately
 router.get('/login', async function(req, res) { // should have a specific return for redirectinh to validstion or to the dashboard/any other page
   let email = req.query.email;
   let username = req.query.username;
@@ -188,19 +179,13 @@ router.get('/login', async function(req, res) { // should have a specific return
   if (message.success) {
     let userid = message.message;
     req.session.userid = userid;
-    console.log("Pickford: "+req.session.userid);
-    let message2 = await ApplicationServices.isValidated(userid);
-    if (message2.success) {
-      // res.redirect("/home");
-      res.send(message2.message);
-    } else {
-      // res.redirect("/validate_user");
-      res.send(message2.message);
-    }
+    console.log("User: "+req.session.userid);
+    res.send("Successfully logged in!");
   } else {
     res.send(message.message);
   }
 });
+// Example: http://localhost:8080/application/logout
 router.get('/logout', async function(req, res) {
   req.session.userid = null;
   // res.redirect("/login");
@@ -210,8 +195,9 @@ router.get('/logout', async function(req, res) {
 });
 
 // PUT
+// Example: http://localhost:8080/application/user?userid=39&password=passwerd&gpa=3.9&standing=Sophomore&majors=Computer Science&isvalidated=true&isadmin=true
 router.put('/user', async function(req, res) { // use query parameters
-  let userid = req.query.userid;
+  let userid = req.session.userid;
   let password = req.query.password;
   let gpa = req.query.gpa;
   let standing = req.query.standing;
@@ -226,11 +212,33 @@ router.put('/user', async function(req, res) { // use query parameters
     res.send(message.message);
   }
 });
+// Example: http://localhost:8080/application/take?courseid=6701&grade=3.2
 router.put('/take', async function(req, res) {
-  
+  // userid,courseid,grade
+  let userid = req.session.userid;
+  let courseid = req.query.courseid;
+  let grade = req.query.grade;
+
+  let message = await ApplicationServices.updateTake(userid,courseid,grade);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
+// Example: http://localhost:8080/application/password?password=p&newpassword=giancarlo esposito
 router.put('/password', async function(req, res) { 
-  
+  // (userid,password,newPassword)
+  let userid = req.session.userid;
+  let password = req.query.password;
+  let newpassword = req.query.newpassword;
+
+  let message = await ApplicationServices.updatePassword(userid,password,newpassword);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
 // Example: http://localhost:8080/application/validate_user?validationcode=3429
 router.put('/validate_user', async function(req, res) {
@@ -246,8 +254,18 @@ router.put('/validate_user', async function(req, res) {
 });
 
 // DELETE
+// Example: http://localhost:8080/application/take?courseid=6700
 router.delete('/take', async function(req, res) {
-
+  // userid,courseid
+  let userid = req.session.userid;
+  let courseid = req.query.courseid;
+  
+  let message = await ApplicationServices.deleteTake(userid,courseid);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
 });
 
 module.exports = router;

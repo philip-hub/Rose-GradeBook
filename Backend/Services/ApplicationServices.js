@@ -37,13 +37,13 @@ async function createUser (email,username,password,gpa,standing,isadmin,majors,v
         connection.close();
     });
     // (@email varchar(35),@username varchar(10),
-    // @password varchar(50),@gpa decimal, @standing varchar(10),
+    // @password varchar(50),@gpa Float, @standing varchar(10),
     // @isadmin bit,@majors varchar(150),@validationcode CHAR(4),
     // @userid INT OUTPUT)
     request.addParameter('email', types.VarChar, email);
     request.addParameter('username', types.VarChar, username);
     request.addParameter('password', types.VarChar, password);
-    request.addParameter('gpa', types.Decimal, gpa);
+    request.addParameter('gpa', types.Float, gpa);
     request.addParameter('standing', types.VarChar, standing);
     request.addParameter('isadmin', types.Bit, booleanToBit(isadmin));
     request.addParameter('majors', types.VarChar, majors);
@@ -64,6 +64,9 @@ async function createUser (email,username,password,gpa,standing,isadmin,majors,v
     return generateMessage(retval==0,retval==0?userid:"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 async function readUser (userid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
     let toRet = [];
 
         const connection = await getNewConnection(false,true);
@@ -92,6 +95,10 @@ async function readUser (userid) {
         return generateMessage(toRet.length==1,toRet.length==1?toRet[0]:"Didn't return 1 user");
 }
 async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majors) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
     if (!checkValidMajors(majors)) {
         return generateMessage(false,"One or more majors entered incorrectly");
     }
@@ -105,12 +112,12 @@ async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majo
         connection.close();
     });
     // @userid int,
-    // @password varchar(50),@gpa decimal, 
+    // @password varchar(50),@gpa Float, 
     // @standing varchar(10),@isadmin bit,
     // @isvalidated bit,@majors varchar(150))
     request.addParameter('userid', types.Int, userid);
     request.addParameter('password', types.VarChar, password);
-    request.addParameter('gpa', types.Decimal, gpa);
+    request.addParameter('gpa', types.Float, gpa);
     request.addParameter('standing', types.VarChar, standing);
     request.addParameter('isadmin', types.Bit, booleanToBit(isadmin));
     request.addParameter('isvalidated', types.Bit, booleanToBit(isvalidated));
@@ -126,7 +133,11 @@ async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majo
     let retval = await callProcedureRequestFinalReturnPromise (request);
     return generateMessage(retval==0,retval==0?"Successfully updated profile!":"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
-async function updatePassword(password,userid,newPassword){
+async function updatePassword(userid,password,newPassword){
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+    
     let connection = await getNewConnection(false,false);
 
     const request = new RequestM('changePassword', (err, rowCount) => {
@@ -158,6 +169,14 @@ async function updatePassword(password,userid,newPassword){
 // 2b. Insert Takes (user-specific)
 
 async function createTake (userid,courseid,grade) { // returns user id for session
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
     let connection = await getNewConnection(false,false);
 
     const request = new RequestM('insertUpdateTakes', (err, rowCount) => {
@@ -167,10 +186,10 @@ async function createTake (userid,courseid,grade) { // returns user id for sessi
         connection.close();
     });
 
-    // @userid INT,@courseid INT,@grade DECIMAL
+    // @userid INT,@courseid INT,@grade Float
     request.addParameter('userid', types.Int, userid);
     request.addParameter('courseid', types.Int, courseid);
-    request.addParameter('grade', types.Decimal, grade);
+    request.addParameter('grade', types.Float, grade);
 
     // In SQL Server 2000 you may need: connection.execSqlBatch(request);
     connection.callProcedure(request);
@@ -188,10 +207,14 @@ async function createTake (userid,courseid,grade) { // returns user id for sessi
 //   user
 
 async function readTakes (userid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
     let toRet = [];
     const connection = await getNewConnection(false,true);
 
-    let sql = 'select * from Takes where UserID = @userid';
+    let sql = 'select * from Takes t JOIN Courses c ON t.CourseID=c.CourseID where UserID = @userid';
     let request = new RequestM(sql, function (err, rowCount, rows) {
         if (err) {
             return generateMessage(false,err);
@@ -218,13 +241,21 @@ async function readTakes (userid) {
 // Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
 
 async function updateTake (userid,courseid,grade) {
-// @userid INT,@courseid INT,@grade DECIMAL
+// @userid INT,@courseid INT,@grade Float
     return await createTake(userid,courseid,grade);
 }
 
 // 2c. Delete takes (user-specific) - plain sql
 // No need to validate, I think; delete won't violate foreign key by not doing anything
 async function deleteTake(userid,courseid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
     const connection = await getNewConnection(false,true);
 
     let sql = 'delete from Takes where userid = @userid AND courseid = @courseid';
@@ -250,15 +281,13 @@ async function deleteTake(userid,courseid) {
 //#endregion
 
 //#region Classes
-// 8. Get classes - this can be done with row sql and add a where with dept specification
-//         Get department will be necessary too - also with sql
-//         Options include: 
-//           department
-//           courseid
-//           none
-//         - Each will be sorted by coursedeptandnumber
 
 async function readCourses (department,courseid) {
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
     let toRet = [];
     const connection = await getNewConnection(false,true);
 
@@ -272,7 +301,7 @@ async function readCourses (department,courseid) {
         }
     });
 
-    if (department) { request.addParameter('department', types.Int, department); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
     if (courseid) { request.addParameter('courseid', types.Int, courseid); }
 
     connection.execSql(request);
@@ -306,7 +335,7 @@ async function validateCourseID (courseid) {
     
     // Here's the magic: the then() function returns a new promise, different from the original:
         // So if we await that then we're good on everything in the thens
-    return generateMessage(numCourses == 1,numCourses == 1?"Successfully validated course!":"Error message; todo, implement varied error messages based on the return value: ");
+    return generateMessage(!courseid || numCourses == 1,(!courseid || numCourses == 1)?"Successfully validated course!":"Error message; todo, implement varied error messages based on the return value");
 }
 
 //#endregion
@@ -321,7 +350,7 @@ async function validateCourseID (courseid) {
 //   - Something like "a community-driven, crowdsourced platform to help students make informed choice"
 // - Needs to be a sproc because will need to get clean averages of each user (only the latest takes of each course by each user used in the average)
 //   - Summer is last, not first; link academic calendar on site front page too to advertise for future planning
-//   - We need a view of courses with only the coursedeptandname and the age (calculated from year and quarter; honestly could be as simple as sum of quarter as tenths digit and year kept the same [e.g. 2022.3 hey this actually kind of like reality lol, I could make the decimals all realistically for each quarter]) and courseid - these will give use the info we need for the join with takes
+//   - We need a view of courses with only the coursedeptandname and the age (calculated from year and quarter; honestly could be as simple as sum of quarter as tenths digit and year kept the same [e.g. 2022.3 hey this actually kind of like reality lol, I could make the Floats all realistically for each quarter]) and courseid - these will give use the info we need for the join with takes
 //     - This will give us the grades of all of the latest courses, after we filter the view above to those with the highest age within each coursedeptandname
 
 // - Strategy will be to do a similar style filter as 3c with appendings; then this table is inserted into
@@ -376,6 +405,10 @@ async function validateCourseID (courseid) {
 // TODO
     // Call right after login, otherwise redirect
 async function isValidated(userid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
     const connection = await getNewConnection(false,true);
 
     let sql = 'select IsValidated from Users where userid = @userid';
@@ -402,6 +435,10 @@ async function isValidated(userid) {
 // - Make a signups table - use have a limit on the number of users, delete from it if it's success
 
 async function validateUser(userid,validationcode) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
     let connection = await getNewConnection(false,false);
 
     const request = new RequestM('validateUser', (err, rowCount) => {
@@ -590,7 +627,7 @@ function convertFromCourseSchema(row) {
     let year = "";
     let quarter = "";
     let coursedeptandnumber = "";
-
+console.log("Got here");
     row.forEach((column) => {
             let colName = column.metadata.colName;
             switch (colName) {
@@ -610,7 +647,7 @@ function convertFromCourseSchema(row) {
                     professor = column.value;
                     break;
                 case 'Year':
-                    year = column.value.slice(-5);
+                    year = Number((""+column.value).substring(11,15))+1;
                     break;
                 case 'Quarter':
                     quarter = column.value;
@@ -619,7 +656,7 @@ function convertFromCourseSchema(row) {
                     coursedeptandnumber = column.value;
                     break;
                 default:
-                  console.log(`New column name?!: ${colName}`);
+                //   console.log(`New column name?!: ${colName}`);
               }
         });
     return {courseid:courseid,name:name,dept:dept,credits:credits,professor:professor,year:year,quarter:quarter,coursedeptandnumber:coursedeptandnumber};

@@ -9,7 +9,7 @@
 CREATE TABLE SelectedUserAges (
   SelectedUserAgeID INT NOT NULL IDENTITY PRIMARY KEY,
   CourseDeptAndNumber VARCHAR(20), 
-  Grade DECIMAL,
-  Credits DECIMAL,
-  [Time] DECIMAL
+  Grade FLOAT,
+  Credits FLOAT,
+  [Time] FLOAT
 )

@@ -12,7 +12,7 @@
 
 CREATE OR ALTER PROCEDURE updateProfile(--@email varchar(35),@username varchar(10),
                                         @userid int,
-                                        @password varchar(50),@gpa decimal, 
+                                        @password varchar(50),@gpa FLOAT, 
                                         @standing varchar(10),@isadmin bit,
                                         @isvalidated bit,@majors varchar(150))
 AS

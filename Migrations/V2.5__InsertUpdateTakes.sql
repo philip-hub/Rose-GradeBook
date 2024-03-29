@@ -1,4 +1,4 @@
-CREATE OR ALTER PROCEDURE insertUpdateTakes (@userid INT,@courseid INT,@grade DECIMAL)
+CREATE OR ALTER PROCEDURE insertUpdateTakes (@userid INT,@courseid INT,@grade FLOAT)
 AS
 BEGIN
 BEGIN TRANSACTION
