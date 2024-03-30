@@ -11,7 +11,7 @@ function formattedDate (daysAgo) {
     return toRet;
 }
 function newYearDate (year) {
-  return year+"-01-01";
+  return year+"-06-06";
 }
 
 async function writeCourses (courses, sections, year) {

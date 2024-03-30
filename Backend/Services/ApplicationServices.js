@@ -137,7 +137,7 @@ async function updatePassword(userid,password,newPassword){
     if (!userid) {
         return generateMessage(false,"Not logged in!");
     }
-    
+
     let connection = await getNewConnection(false,false);
 
     const request = new RequestM('changePassword', (err, rowCount) => {
@@ -282,7 +282,7 @@ async function deleteTake(userid,courseid) {
 
 //#region Classes
 
-async function readCourses (department,courseid) {
+async function readCourses (courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
     let message = await validateCourseID(courseid);
     if (!message.success) {
         return generateMessage(false,"Invalid course id provided!");
@@ -292,8 +292,15 @@ async function readCourses (department,courseid) {
     const connection = await getNewConnection(false,true);
 
     let sql = 'select * from Courses where 0=0';
-    if (department) { sql += " and Dept=@department" }
     if (courseid) { sql += " and CourseID=@courseid" }
+    if (name) { sql += " and Name=@name" }
+    if (department) { sql += " and Dept=@department" }
+    if (credits) { sql += " and Credits=@credits" }
+    if (professor) { sql += " and Professor=@professor" }
+    if (year) { sql += " and Year=@year" }
+    if (quarter) { sql += " and Dept=@quarter" }
+    if (coursedeptandnumber) { sql += " and CourseDeptAndNumber=@coursedeptandnumber" }
+    sql += " ORDER BY CourseDeptAndNumber";
 
     let request = new RequestM(sql, function (err, rowCount, rows) {
         if (err) {
@@ -301,8 +308,64 @@ async function readCourses (department,courseid) {
         }
     });
 
-    if (department) { request.addParameter('department', types.VarChar, department); }
     if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (name) { request.addParameter('name', types.VarChar, name); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
+
+    connection.execSql(request);
+
+    let rows2 = await execSqlRequestDonePromise (request);
+    rows2.forEach((columns) => {
+        let toPush = 
+        convertFromCourseSchema(columns);
+        toRet.push(toPush);
+    });
+
+    return generateMessage(true,toRet);
+}
+
+// https://www.sqlshack.com/pagination-in-sql-server/
+async function readCoursesPagination(page, courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
+    let pageSize = 20;
+
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
+    let toRet = [];
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select * from Courses where 0=0';
+    if (courseid) { sql += " and CourseID=@courseid" }
+    if (name) { sql += " and Name=@name" }
+    if (department) { sql += " and Dept=@department" }
+    if (credits) { sql += " and Credits=@credits" }
+    if (professor) { sql += " and Professor=@professor" }
+    if (year) { sql += " and Year=@year" }
+    if (quarter) { sql += " and Dept=@quarter" }
+    if (coursedeptandnumber) { sql += " and CourseDeptAndNumber=@coursedeptandnumber" }
+    sql += ` ORDER BY CourseDeptAndNumber OFFSET (${page-1})*${pageSize} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (name) { request.addParameter('name', types.VarChar, name); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
 
     connection.execSql(request);
 
@@ -381,22 +444,6 @@ async function validateCourseID (courseid) {
 //       double majors (all, not specific)
 //       triple major (all, not specific)
 //       nothing for all for all
-
-//#endregion
-
-//#region (TODO) Get Search Data
-// 4. Search for class (https://www.algolia.com/blog/engineering/how-to-implement-autocomplete-with-javascript-on-your-website/)
-// Options - use sql for all of these, no need for anything else
-//   By description/nsame - Autocomplete names/substring search
-//   By course name and dept (e.g., CSSE220) - Autocomplete names/substring search
-//   By professor - Autocomplete names/substring search
-// Two choices: 
-//   Use a sproc and filter on the backend with an index on the name like 333 group (a /suggest endpoint)
-//   - I think this is the way to go; the algolia implementation was very simple. I just need to preload the three arays above all the endpoints and just call on them for filtering
-//   Use pagination for search results
-// Add endpoints for getting all of these as an arrays
-// - Ooh one of the could return all the professors names but with first name first, other with last name first
-// - Then the autocomplete results are given
 
 //#endregion
 
@@ -596,6 +643,10 @@ function booleanToBit(bool) {
     return bool?1:0;
 }
 
+function newYearDate (year) {
+    return year+"-06-06";
+}  
+
 const waitSeconds = (n) => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -627,7 +678,7 @@ function convertFromCourseSchema(row) {
     let year = "";
     let quarter = "";
     let coursedeptandnumber = "";
-console.log("Got here");
+
     row.forEach((column) => {
             let colName = column.metadata.colName;
             switch (colName) {
@@ -647,7 +698,7 @@ console.log("Got here");
                     professor = column.value;
                     break;
                 case 'Year':
-                    year = Number((""+column.value).substring(11,15))+1;
+                    year = Number((""+column.value).substring(11,15));
                     break;
                 case 'Quarter':
                     quarter = column.value;
@@ -730,6 +781,7 @@ exports.updateTake = updateTake;
 exports.deleteTake = deleteTake;
 
 exports.readCourses = readCourses;
+exports.readCoursesPagination = readCoursesPagination;
 exports.validateCourseID = validateCourseID;
 
 exports.isValidated = isValidated;

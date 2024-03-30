@@ -68,25 +68,13 @@ function responseTemplate(errors, value) {
             double majors (all, not specific)
             triple major (all, not specific)
             nothing for all for all
-      4. Search for class (https://www.algolia.com/blog/engineering/how-to-implement-autocomplete-with-javascript-on-your-website/)
-          Options - use sql for all of these, no need for anything else
-            By description/nsame - Autocomplete names/substring search
-            By course name and dept (e.g., CSSE220) - Autocomplete names/substring search
-            By professor - Autocomplete names/substring search
-          Two choices: 
-            Use a sproc and filter on the backend with an index on the name like 333 group (a /suggest endpoint)
-            - I think this is the way to go; the algolia implementation was very simple. I just need to preload the three arays above all the endpoints and just call on them for filtering
-            Use pagination for search results
-        Add endpoints for getting all of these as an arrays
-        - Ooh one of the could return all the professors names but with first name first, other with last name first
-        - Then the autocomplete results are given
+
    */
 
 // POST
 // TODO: WHY DOES IT FREEZE UP SOMETIMES??
 
 // Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=4.0&standing=Freshman&isadmin=true&majors=Physics;Computer Science
-  // TODO I think isadmin is broken
 router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
   // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
   let email = req.query.email;
@@ -100,8 +88,7 @@ router.post('/signup', async function(req, res) { // use query parameters: https
   let validationcode = ApplicationServices.generateTemporaryCode();
   let message = await ApplicationServices.createUser (email,username,password,gpa,standing,isadmin,majors,validationcode);
   if (message.success) {
-    // TODO session stuff; a user was successfully created after all
-    // Also calling the email thing for the validation code
+    // TODO calling the email thing for the validation code
     console.log("Validation Code: "+validationcode);
     // res.redirect("/validate_user");
     let userid = message.message;
@@ -142,6 +129,8 @@ router.get('/user', async function(req, res) { // use query parameters
   }
 });
 // Example: http://localhost:8080/application/take
+// TODO Restrict this to a limited, realistic number (check on each insert that quarters and year aren't too high)
+  // 7 courses at most per quarter
 router.get('/take', async function(req, res) {
   let userid = req.session.userid;
   let message = await ApplicationServices.readTakes(userid);
@@ -153,23 +142,35 @@ router.get('/take', async function(req, res) {
 });
 
 // TODO Figure out if we need to validate department as well
-// Example: http://localhost:8080/application/courses
+  // Also figure out which options are worth making available; need searches going through in a second at most
+// Example: http://localhost:8080/application/courses?courseid=8000
 // Example: http://localhost:8080/application/courses?department=MA
 router.get('/courses', async function(req, res) {
-  // department,courseid
-  let department = req.query.department;
-  let courseid = req.query.courseid;
+  let page = req.query.page;
 
-    let message2 = await ApplicationServices.readCourses(department,courseid);
-    if (message2.success) {
-      res.send(message2.message);
-    } else {
-      res.send("Course ID invalid");
-    }
+  if (!page) {
+    page = 1;
+  }
+
+  let courseid = req.query.courseid;
+  let name = req.query.name;
+  let department = req.query.department;
+  let credits = req.query.credits;
+  let professor = req.query.professor;
+  let year = req.query.year;
+  let quarter = req.query.quarter;
+  let coursedeptandnumber = req.query.coursedeptandnumber;
+
+  let message2 = await ApplicationServices.readCoursesPagination(page, courseid, name, department, credits, professor, year, quarter, coursedeptandnumber);
+  if (message2.success) {
+    res.send(message2.message);
+  } else {
+    res.send("Course ID invalid");
+  }
 });
 // Example: http://localhost:8080/application/login?username=p&password=p
 // TODO
-  // Need to call isValidated afterwards; depending on the result, redirect appropriately
+  // Need to call is_validated afterwards; depending on the result, redirect appropriately
 router.get('/login', async function(req, res) { // should have a specific return for redirectinh to validstion or to the dashboard/any other page
   let email = req.query.email;
   let username = req.query.username;
@@ -192,6 +193,48 @@ router.get('/logout', async function(req, res) {
   res.send(
     "Logged out!"
   );
+});
+
+// TODO
+  // Will query based on the dropdown option from the search, provided by these
+    // Show loading as the first result while the query is loading
+  // Learn how to stall on frontend
+    // Only one search one second after stopping inputs
+  // Might have to add year and/or quarter to make thing more efficient; less huge search result set
+// Example: http://localhost:8080/application/suggest_courses?searchstr=MA
+router.get('/suggest_courses', async function(req, res) {
+  let searchstr = req.query.searchstr;
+  let toRet = []; // add matching query results and result type
+
+  if (searchstr.length <= 2) {
+    res.send(toRet);
+  }
+
+  let message2 = await ApplicationServices.readCourses(null,null,null,null,null,null,null);
+  if (message2.success) {
+    let courses = message2.message;
+    courses.forEach((course) => {
+      // let columnNames = Object.keys(course);
+      // columnNames.forEach((colname) => {
+      //   console.log(colname);
+      //   addIfMatchCourse(searchstr, course, colname, toRet);
+      // });
+      addIfMatchCourse(searchstr, course, "name", toRet);
+      addIfMatchCourse(searchstr, course, "dept", toRet);
+      // addIfMatchCourse(searchstr, course, "credits", toRet);
+      addIfMatchCourse(searchstr, course, "professor", toRet);
+      addIfMatchCourse(searchstr, course, "year", toRet);
+      addIfMatchCourse(searchstr, course, "quarter", toRet);
+      addIfMatchCourse(searchstr, course, "coursedeptandnumber", toRet);
+    });
+    toRet = removeDuplicates(toRet);
+    res.send(toRet); // TODO Get standard message formatting from that
+    // TODO I need to protect against queries of people not logged in I should add an auth middleware
+    // TODO Add error handling
+    // TODO Add averages
+  } else {
+    res.send(toRet);
+  }
 });
 
 // PUT
@@ -267,5 +310,43 @@ router.delete('/take', async function(req, res) {
     res.send(message.message);
   }
 });
+
+// TODO Optimize by having queries using name be more efficient by still searching by coursedeptandnumber
+function addIfMatchCourse(searchstr, course, property, toRet) {
+    if ((course[property].toString().toLowerCase()).indexOf(searchstr.toString().toLowerCase()) != -1) { // Checks within, not case sensitive
+      toRet.push({
+        value:course[property]
+        ,type:property
+      });
+    }
+}
+
+// Only works because of the nonexistent overlap between types and values
+function removeDuplicates(objarr) {
+  // Declare a new array
+  let newArray = [];
+
+  // Declare an empty object
+  let uniqueObject = {};
+
+  // Loop for the array elements
+  for (let i in objarr) {
+
+      // Extract the title
+      objValue = objarr[i]['value'];
+      objType = objarr[i]['type'];
+
+      // Use the title as the index
+      uniqueObject[objValue+objType] = objarr[i];
+  }
+
+  // Loop to push unique object into array
+  for (i in uniqueObject) {
+      newArray.push(uniqueObject[i]);
+  }
+
+  // Return the unique objects
+  return newArray;
+}
 
 module.exports = router;

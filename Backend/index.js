@@ -11,7 +11,7 @@ app.use(express.json({limit: '200mb'}));
 app.use(express.urlencoded({limit: '200mb', extended: true}));
 
 var importEndpoints = require('./importEndpoints.js');
-app.use('/import_data',importEndpoints);
+app.use('/import',importEndpoints);
 var scrapingEndpoints = require('./scrapingEndpoints.js'); // Courses router
 app.use('/scraping',scrapingEndpoints);
 var applicationEndpoints = require('./applicationEndpoints.js'); // Courses router
