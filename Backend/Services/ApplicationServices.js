@@ -12,6 +12,8 @@ var RequestM = require('tedious').Request;
 var types = require('tedious').TYPES;
 const { DateTime } = require("luxon");
 
+let pageSize = 20;
+
 //#region CRUD
 
 //#region Users
@@ -331,8 +333,6 @@ async function readCourses (courseid, name, department, credits, professor, year
 
 // https://www.sqlshack.com/pagination-in-sql-server/
 async function readCoursesPagination(page, courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
-    let pageSize = 20;
-
     let message = await validateCourseID(courseid);
     if (!message.success) {
         return generateMessage(false,"Invalid course id provided!");
@@ -375,8 +375,58 @@ async function readCoursesPagination(page, courseid, name, department, credits, 
         convertFromCourseSchema(columns);
         toRet.push(toPush);
     });
-        
-    return generateMessage(true,toRet);
+
+    let message2 = await numPages(courseid, name, department, credits, professor, year, quarter, coursedeptandnumber);
+    if (message2.success) {
+        let numPages = message2.message;
+        return generateMessage(true,{numPages:numPages,data:toRet});
+    } else {
+        return message2;
+    }
+}
+
+// TODO this being called every time may be inefficient
+async function numPages(courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select COUNT(*) from Courses where 0=0';
+    if (courseid) { sql += " and CourseID=@courseid" }
+    if (name) { sql += " and Name=@name" }
+    if (department) { sql += " and Dept=@department" }
+    if (credits) { sql += " and Credits=@credits" }
+    if (professor) { sql += " and Professor=@professor" }
+    if (year) { sql += " and Year=@year" }
+    if (quarter) { sql += " and Dept=@quarter" }
+    if (coursedeptandnumber) { sql += " and CourseDeptAndNumber=@coursedeptandnumber" }
+    // sql += ` ORDER BY CourseDeptAndNumber OFFSET (${page-1})*${pageSize} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (name) { request.addParameter('name', types.VarChar, name); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
+
+    connection.execSql(request);
+    let rows1 = await execSqlRequestDonePromise (request);
+    let numCourses = rows1[0][0].value; // first (and only) row, first (and only) column
+    
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(true,numCourses);
 }
 
 // 10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)

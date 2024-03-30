@@ -71,9 +71,23 @@ function responseTemplate(errors, value) {
 
    */
 
-// POST
-// TODO: WHY DOES IT FREEZE UP SOMETIMES??
+// TODO: General QA Stuff; no freezing, edge cases, and slowness
 
+// POST  
+// Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
+router.post('/take', async function(req, res) {
+  // userid,courseid,grade
+  let userid = req.session.userid;
+  let courseid = req.query.courseid;
+  let grade = req.query.grade;
+
+  let message = await ApplicationServices.createTake(userid,courseid,grade);
+  if (message.success) {
+    res.send(message.message);
+  } else {
+    res.send(message.message);
+  }
+});
 // Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=4.0&standing=Freshman&isadmin=true&majors=Physics;Computer Science
 router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
   // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
@@ -96,20 +110,6 @@ router.post('/signup', async function(req, res) { // use query parameters: https
     res.send(message.success);
   } else {
     res.send(message.success);
-  }
-});
-// Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
-router.post('/take', async function(req, res) {
-  // userid,courseid,grade
-  let userid = req.session.userid;
-  let courseid = req.query.courseid;
-  let grade = req.query.grade;
-
-  let message = await ApplicationServices.createTake(userid,courseid,grade);
-  if (message.success) {
-    res.send(message.message);
-  } else {
-    res.send(message.message);
   }
 });
 
@@ -140,9 +140,10 @@ router.get('/take', async function(req, res) {
     res.send(message.message);
   }
 });
-
 // TODO Figure out if we need to validate department as well
   // Also figure out which options are worth making available; need searches going through in a second at most
+    // If performance becomes a concern, also separate out the pagination request
+  // Of course remember the option to add indices
 // Example: http://localhost:8080/application/courses?courseid=8000
 // Example: http://localhost:8080/application/courses?department=MA
 router.get('/courses', async function(req, res) {
@@ -194,20 +195,20 @@ router.get('/logout', async function(req, res) {
     "Logged out!"
   );
 });
-
 // TODO
   // Will query based on the dropdown option from the search, provided by these
     // Show loading as the first result while the query is loading
   // Learn how to stall on frontend
     // Only one search one second after stopping inputs
   // Might have to add year and/or quarter to make thing more efficient; less huge search result set
-// Example: http://localhost:8080/application/suggest_courses?searchstr=MA
+// Example: http://localhost:8080/application/suggest_courses?searchstr=holl
 router.get('/suggest_courses', async function(req, res) {
   let searchstr = req.query.searchstr;
   let toRet = []; // add matching query results and result type
 
   if (searchstr.length <= 2) {
     res.send(toRet);
+    return;
   }
 
   let message2 = await ApplicationServices.readCourses(null,null,null,null,null,null,null);
