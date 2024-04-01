@@ -426,7 +426,7 @@ async function numPages(courseid, name, department, credits, professor, year, qu
     
     // Here's the magic: the then() function returns a new promise, different from the original:
         // So if we await that then we're good on everything in the thens
-    return generateMessage(true,numCourses);
+    return generateMessage(true,Math.ceil(numCourses/pageSize));
 }
 
 // 10c. Validate courseid - this can just be a function wrapping plain sql (select count(*) from Courses where courseid=@courseid)
@@ -455,7 +455,7 @@ async function validateCourseID (courseid) {
 
 //#endregion
 
-//#region (TODO) Averages
+//#region Averages
 // 3b. Calculate average from users (from entered course data)
 // - Live interactivity of this would be really sick
 //   - Out of scope for now; would have to do some realy fancy shit (sacing avg every hour, algebraically keeping up with a little list of diffs in num and den to get new avgs x the # of averages we want like this)
@@ -475,6 +475,29 @@ async function validateCourseID (courseid) {
 //       double majors (all, not specific)
 //       triple major (all, not specific)
 //       nothing for all for all
+
+async function userCalculatedAverage(userid, standing, major, isDoubleMajor, isTripleMajor) {
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select IsValidated from Users where userid = @userid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid);
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    
+    return generateMessage((rows1.length==1 && !(!rows1[0][0].value)),(rows1.length==1 && !(!rows1[0][0].value))?"Successfully validated user!":"Didn't return 1 user");
+}
+
 // 3c. Calculate average from courses (based on all course fields; and their interserctions)
 //     - We can just use where statements appended to the query currently saved, run as a sqlsstatements
 //     IMPORTANTE - For all THE AVERAGES, HAVEV 10 be thee threshold of dhowing data (loading bar displayed of have far untiol we reach necessary data)
@@ -483,6 +506,32 @@ async function validateCourseID (courseid) {
 //     quarter
 //     professor
 //     nothing for all for all
+async function courseCalculatedAverage(userid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select IsValidated from Users where userid = @userid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid);
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    
+    return generateMessage((rows1.length==1 && !(!rows1[0][0].value)),(rows1.length==1 && !(!rows1[0][0].value))?"Successfully validated user!":"Didn't return 1 user");
+}
+
 // 3d. Calculate averages from stated gpa
 //     - Maybe give the user a little message if they match (like, congrats!)
 //     - And like a gamified load bar on their profile of what % of their data has been entered by them
@@ -494,7 +543,36 @@ async function validateCourseID (courseid) {
 //       double majors (all, not specific)
 //       triple major (all, not specific)
 //       nothing for all for all
+async function userStatedGPAAverage(userid, standing, major, isDoubleMajor, isTripleMajor) {
+    const connection = await getNewConnection(false,true);
 
+    let sql = 'SELECT AVG(GPA) as average FROM Users u WHERE 0=0';
+    if (userid) { sql += " and Username=@username" }
+    if (standing) { sql += " and Email=@email" }
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+
+    request.addParameter('password', types.VarChar, password);
+    if (username) { request.addParameter('username', types.VarChar, username); }
+    if (email) { request.addParameter('email', types.VarChar, email); }
+
+
+    request.addParameter('userid', types.Int, userid);
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    
+    return generateMessage((rows1.length==1 && !(!rows1[0][0].value)),(rows1.length==1 && !(!rows1[0][0].value))?"Successfully validated user!":"Didn't return 1 user");
+}
 //#endregion
 
 //#region Authentication

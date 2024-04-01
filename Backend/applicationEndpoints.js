@@ -16,7 +16,6 @@ router.use(session(
     cookie: {},
     resave: false,
     saveUninitialized: true}
-
 ));
 
 var ApplicationServices = require('./Services/ApplicationServices.js');
@@ -38,8 +37,8 @@ function responseTemplate(errors, value) {
       - Needs to be a sproc because will need to get clean averages of each user (only the latest takes of each course by each user used in the average)
         - Summer is last, not first; link academic calendar on site front page too to advertise for future planning
         - We need a view of courses with only the coursedeptandname and the age (calculated from year and quarter; honestly could be as simple as sum of quarter as tenths digit and year kept the same [e.g. 2022.3 hey this actually kind of like reality lol, I could make the decimals all realistically for each quarter]) and courseid - these will give use the info we need for the join with takes
-          - This will give us the grades of all of the latest courses, after we filter the view above to those with the highest age within each coursedeptandname
-
+          - This will give us the grades of all of the latest takes, after we filter the view above to those with the highest age within each coursedeptandname
+    - A selling point is that you can comment, unrestricted leaving your true opinions of professors
       - Strategy will be to do a similar style filter as 3c with appendings; then this table is inserted into
         - If this succeeds, then we run the sproc with output param 2.7
           Options to include (filtering the users):
@@ -69,11 +68,16 @@ function responseTemplate(errors, value) {
             triple major (all, not specific)
             nothing for all for all
 
+      12. (TODO) CRUD for comments
+      13. (TODO) Get the endpoints and error stuff done this weekend; AWS and Redis stuff is the goal this week
+          a. I think just message success and value; if it fails, pop up modal. Otherwise it does whatever success means
+      14. (TODO) Set up database data export to files or something because tsql sometimes just creates cursed tables
+          a. This was the wholw thing can be reloaded in case of cursed table
    */
 
-// TODO: General QA Stuff; no freezing, edge cases, and slowness
-
-// POST  
+  
+// POST
+// TODO: General QA Stuff; no freezing, edge cases (thinking pagination), and slowness
 // Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
 router.post('/take', async function(req, res) {
   // userid,courseid,grade
@@ -88,7 +92,7 @@ router.post('/take', async function(req, res) {
     res.send(message.message);
   }
 });
-// Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=4.0&standing=Freshman&isadmin=true&majors=Physics;Computer Science
+// Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=2.49&standing=Freshman&isadmin=1&majors=Physics;Computer Science
 router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
   // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
   let email = req.query.email;

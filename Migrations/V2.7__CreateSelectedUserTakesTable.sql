@@ -6,10 +6,11 @@
         --   triple major (all, not specific)
         --   nothing for all for all
 
-CREATE TABLE SelectedUserAges (
+CREATE TABLE SelectedUserTakes (
   SelectedUserAgeID INT NOT NULL IDENTITY PRIMARY KEY,
   CourseDeptAndNumber VARCHAR(20), 
   Grade FLOAT,
   Credits FLOAT,
+  UserID INT,
   [Time] FLOAT
 )
