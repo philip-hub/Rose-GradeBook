@@ -241,6 +241,62 @@ router.get('/suggest_courses', async function(req, res) {
     res.send(toRet);
   }
 });
+// Example: http://localhost:8080/application/users_calculated_average?forThisUser=true
+// Example: http://localhost:8080/application/users_calculated_average?major=Computer Science
+// Example: http://localhost:8080/application/users_calculated_average?isDoubleMajor=true
+// Example: http://localhost:8080/application/users_calculated_average?isTripleMajor=true
+router.get('/users_calculated_average', async function(req, res) {
+
+  let userid = req.session.userid;
+  let forThisUser = req.query.forThisUser;
+  let standing = req.query.standing;
+  let major = req.query.major;
+  let isDoubleMajor = req.query.isDoubleMajor; // TODO test double and triple major functionality still
+  let isTripleMajor = req.query.isTripleMajor;
+
+  let message2 =  await ApplicationServices.userCalculatedAverage(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+  if (message2.success) {
+    res.send(message2);
+  } else {
+    res.send(message2);
+  }
+});
+// TODO implement this and test its functionality
+router.get('/courses_calculated_average', async function(req, res) {
+  let courseid = req.query.courseid;
+  let department = req.query.department;
+  let credits = req.query.credits;
+  let professor = req.query.professor;
+  let year = req.query.year;
+  let quarter = req.query.quarter;
+  let coursedeptandnumber = req.query.coursedeptandnumber;
+
+  let message2 = await ApplicationServices.courseCalculatedAverage(courseid, department, credits, professor, year, quarter, coursedeptandnumber);
+  if (message2.success) {
+    res.send(message2);
+  } else {
+    res.send(message2);
+  }
+});
+// Example: http://localhost:8080/application/users_stated_gpa_average/?forThisUser=true
+// Example: http://localhost:8080/application/users_stated_gpa_average?major=Computer Science
+// Example: http://localhost:8080/application/users_stated_gpa_average?isDoubleMajor=true
+// Example: http://localhost:8080/application/users_stated_gpa_average?isTripleMajor=true
+router.get('/users_stated_gpa_average', async function(req, res) {
+  let userid = req.session.userid;
+  let forThisUser = req.query.forThisUser;
+  let standing = req.query.standing;
+  let major = req.query.major;
+  let isDoubleMajor = req.query.isDoubleMajor;
+  let isTripleMajor = req.query.isTripleMajor;
+
+  let message2 =  await ApplicationServices.userStatedGPAAverage(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+  if (message2.success) {
+    res.send(message2);
+  } else {
+    res.send(message2);
+  }
+});
 
 // PUT
 // Example: http://localhost:8080/application/user?userid=39&password=passwerd&gpa=3.9&standing=Sophomore&majors=Computer Science&isvalidated=true&isadmin=true

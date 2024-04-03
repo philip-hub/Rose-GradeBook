@@ -1,6 +1,0 @@
--- SELECT AVG(averages.average) as average FROM 
---   (
---      SELECT AVG(Grade) as average FROM Takes T JOIN Courses c ON t.CourseID=c.CourseID
---      WHERE 0=0 AND c.CourseID=@courseid  -- This is where we put conditions on courses averaged
---      GROUP BY CourseDeptAndNumber
---   ) AS averages

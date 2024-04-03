@@ -7,10 +7,12 @@
         --   nothing for all for all
 
 CREATE TABLE SelectedUserTakes (
-  SelectedUserAgeID INT NOT NULL IDENTITY PRIMARY KEY,
+  SelectedUserTakeID INT NOT NULL IDENTITY PRIMARY KEY,
+  CourseID INT,
   CourseDeptAndNumber VARCHAR(20), 
   Grade FLOAT,
   Credits FLOAT,
   UserID INT,
+  TakeUserID INT,
   [Time] FLOAT
 )
