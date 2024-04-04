@@ -28,52 +28,50 @@ function responseTemplate(errors, value) {
   // This API will allow for all of the communication necessary for the frontend of OpenGradebook
 
   /*
-    GET
-      3b. Calculate average from users (from entered course data)
-      - Live interactivity of this would be really sick
-        - Out of scope for now; would have to do some realy fancy shit (sacing avg every hour, algebraically keeping up with a little list of diffs in num and den to get new avgs x the # of averages we want like this)
-      - Remind users to share their failures and successes; refactor the messaging to emphasize the benefit to everyone
-        - Something like "a community-driven, crowdsourced platform to help students make informed choice"
-      - Needs to be a sproc because will need to get clean averages of each user (only the latest takes of each course by each user used in the average)
-        - Summer is last, not first; link academic calendar on site front page too to advertise for future planning
-        - We need a view of courses with only the coursedeptandname and the age (calculated from year and quarter; honestly could be as simple as sum of quarter as tenths digit and year kept the same [e.g. 2022.3 hey this actually kind of like reality lol, I could make the decimals all realistically for each quarter]) and courseid - these will give use the info we need for the join with takes
-          - This will give us the grades of all of the latest takes, after we filter the view above to those with the highest age within each coursedeptandname
-    - A selling point is that you can comment, unrestricted leaving your true opinions of professors
-      - Strategy will be to do a similar style filter as 3c with appendings; then this table is inserted into
-        - If this succeeds, then we run the sproc with output param 2.7
-          Options to include (filtering the users):
-            user (user-specific)
-            user year (standing)
-            major
-            double majors (all, not specific)
-            triple major (all, not specific)
-            nothing for all for all
-      3c. Calculate average from courses (based on all course fields; and their interserctions)
-          - We can just use where statements appended to the query currently saved, run as a sqlsstatements
-          IMPORTANTE - For all THE AVERAGES, HAVEV 10 be thee threshold of dhowing data (loading bar displayed of have far untiol we reach necessary data)
-          coursedeptandnumber
-          class year
-          quarter
-          professor
-          nothing for all for all
-      3d. Calculate averages from stated gpa
-          - Maybe give the user a little message if they match (like, congrats!)
-          - And like a gamified load bar on their profile of what % of their data has been entered by them
-          Options to include (filtering the users): - can just be a sql query with the following stuff appended in the where
-            - For appended to where conditions start with an always true (0 = 0) and then the ands appended
-            user (user-specific)
-            user year (standing)
-            major
-            double majors (all, not specific)
-            triple major (all, not specific)
-            nothing for all for all
-
       12. (TODO) CRUD for comments
       13. (TODO) Get the endpoints and error stuff done this weekend; AWS and Redis stuff is the goal this week
           a. I think just message success and value; if it fails, pop up modal. Otherwise it does whatever success means
       14. (TODO) Set up database data export to files or something because tsql sometimes just creates cursed tables
           a. This was the wholw thing can be reloaded in case of cursed table
-   */
+      TODO Axe teacher averages but leave course advice comments
+        // Link ratemyprof for any teacher-specific feedback ,be careful with the messaging
+          // Put posters up[ with different quesions, followed by try our app today at with a qr code?
+            // Questions: Answering the age old question of which major has it w\best (show overlapping n)
+              // Planning courses next quarter? Want to find out what courses are the easiest? Look at this to see what courses have what difficulty
+              // Find anonymous (we only store an irreversible hash), verified comments and grades and leave tips for other users
+                // Leave the grades your are and aren't proud of, for future generations of rose students
+                // Had a bad test or quiz? Homework overwhelming?
+                  // Leave a warning for others!
+      TODO (write a frontend story and then determine what endpoints still need to be entered)
+        // Have frontend display distributions smoothed (this gives illusion of lots of info)
+          // <Endpoint> returns the list of data instead of averaging it for all the average ones
+        // Really need the data loading bars
+          // Return counts of the things that are being calculated with averages <ENDPOINT>
+            // Prolly just implement this and the above by literally subbing out the avg for count, the column
+        // Imagining the flow: 
+            // They sign up <ENDPOINT> (implement email)
+            // After they auth, directs them to give grades on any four courses <ENDPOINT> (suggest with only courses)
+              // They receive a modal message thanking them and asking for their data, and to check back in regularly to see what's there
+                // Modal contains four courses to input
+                  // Dropdowns for quarter and year, then search for courses within their
+                  // Also a dropdown for grade
+              // The homepage is the same with stats invisible during this; says they have to enter four courses to see data
+              // Bullet: Remind them that this is on the honor system, and could be important to help some students keep scholarships etc.
+              // "Standard online forum rules: Keep it civil and respectful, especially towards profs. Make criticism constructive"
+            // They see the landing page, with all the averages by department, major in a leaderboard type fashion
+              // And sample sizes and distributions
+              // This allows them to take what is said with a grain of salt
+            // They can click into them and get the same little grade entry boxes as in the initial model; the click a button to say they took it and then enter the data to all the courses under them
+              // Thank you modal after this too. Give total count of entries into takes <Endpoint>. Have a little picture of a loadinging bar vertical to the goal.
+              // I should put grain of salt warnings under everything
+              // The course page has the avg, distribution, and number of data points
+                // It also has a list of sections; you can mark that you have taken one and then 
+            // or they can search for courses by certain thing
+          // User profile page: update profile, emphasize not having to state username if you want
+          // If logged out, show modal <Endpoint> (standardize error codes; logout = 1)
+            // Do it lazily, only on errors that warrant specidfics; just try to reserve special number for logins for now
+        // Endpoints that haven't been implemented marked with <ENDPOINT>
+          */
 
   
 // POST
@@ -106,7 +104,7 @@ router.post('/signup', async function(req, res) { // use query parameters: https
   let validationcode = ApplicationServices.generateTemporaryCode();
   let message = await ApplicationServices.createUser (email,username,password,gpa,standing,isadmin,majors,validationcode);
   if (message.success) {
-    // TODO calling the email thing for the validation code
+    // TODO <endpoint> calling the email thing for the validation code; https://www.w3schools.com/nodejs/nodejs_email.asp
     console.log("Validation Code: "+validationcode);
     // res.redirect("/validate_user");
     let userid = message.message;
@@ -133,7 +131,8 @@ router.get('/user', async function(req, res) { // use query parameters
   }
 });
 // Example: http://localhost:8080/application/take
-// TODO Restrict this to a limited, realistic number (check on each insert that quarters and year aren't too high)
+// Don't bother restricting this to a limited, realistic number (checking on each insert that quarters and year aren't too high)
+  // guilt is strat
   // 7 courses at most per quarter
 router.get('/take', async function(req, res) {
   let userid = req.session.userid;
@@ -233,10 +232,7 @@ router.get('/suggest_courses', async function(req, res) {
       addIfMatchCourse(searchstr, course, "coursedeptandnumber", toRet);
     });
     toRet = removeDuplicates(toRet);
-    res.send(toRet); // TODO Get standard message formatting from that
-    // TODO I need to protect against queries of people not logged in I should add an auth middleware
-    // TODO Add error handling
-    // TODO Add averages
+    res.send(toRet);
   } else {
     res.send(toRet);
   }
@@ -261,7 +257,6 @@ router.get('/users_calculated_average', async function(req, res) {
     res.send(message2);
   }
 });
-// TODO implement this and test its functionality
 router.get('/courses_calculated_average', async function(req, res) {
   let courseid = req.query.courseid;
   let department = req.query.department;
