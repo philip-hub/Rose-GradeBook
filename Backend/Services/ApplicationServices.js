@@ -539,6 +539,72 @@ console.log(sql);
     let rows1 = await execSqlRequestDonePromise(request);
     return generateMessage(true, "Prepped user average calculation");
 }
+async function userCalculatedAverageStdDev (userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) { // returns user id for session
+    let message = await setupUserCalculatedAverage (userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+    if (!message.success) {
+        return message;
+    }
+    let connection = await getNewConnection(false,false);
+
+    const request = new RequestM('userCalculatedAverageStdDev', (err, rowCount) => {
+        if (err) { 
+            return generateMessage(false,err);
+        }
+        connection.close();
+    });
+
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('isDoubleMajor', types.Bit, booleanToBit(isDoubleMajor));
+    request.addParameter('isTripleMajor', types.Bit, booleanToBit(isTripleMajor));
+    request.addOutputParameter('average', types.Float);
+
+
+    // console.log(request);
+
+    // In SQL Server 2000 you may need: connection.execSqlBatch(request);
+    connection.callProcedure(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+
+    let count = await callProcedureRequestOutputParamPromise (request);// this makes sense; it isn't sequential, it speedruns through and waits for both
+    let retval = await callProcedureRequestFinalReturnPromise (request);
+    return generateMessage(retval==0,retval==0?count:"Either average of nothing or failed delete. return value: "+retval);
+}
+async function userCalculatedAverageCount (userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) { // returns user id for session
+    let message = await setupUserCalculatedAverage (userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+    if (!message.success) {
+        return message;
+    }
+    let connection = await getNewConnection(false,false);
+
+    const request = new RequestM('userCalculatedAverageCount', (err, rowCount) => {
+        if (err) { 
+            return generateMessage(false,err);
+        }
+        connection.close();
+    });
+
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('isDoubleMajor', types.Bit, booleanToBit(isDoubleMajor));
+    request.addParameter('isTripleMajor', types.Bit, booleanToBit(isTripleMajor));
+    request.addOutputParameter('average', types.Float);
+
+
+    // console.log(request);
+
+    // In SQL Server 2000 you may need: connection.execSqlBatch(request);
+    connection.callProcedure(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+
+    let count = await callProcedureRequestOutputParamPromise (request);// this makes sense; it isn't sequential, it speedruns through and waits for both
+    let retval = await callProcedureRequestFinalReturnPromise (request);
+    return generateMessage(retval==0,retval==0?count:"Either average of nothing or failed delete. return value: "+retval);
+}
 
 // 3c. Calculate average from courses (based on all course fields; and their interserctions)
 //     TODO IMPORTANTE - For all THE AVERAGES, HAVEV 10 be thee threshold of dhowing data (loading bar displayed of have far untiol we reach necessary data)
@@ -960,6 +1026,8 @@ exports.readCoursesPagination = readCoursesPagination;
 exports.validateCourseID = validateCourseID;
 
 exports.userCalculatedAverage = userCalculatedAverage;
+exports.userCalculatedAverageCount = userCalculatedAverageCount;
+exports.userCalculatedAverageStdDev = userCalculatedAverageStdDev;
 exports.courseCalculatedAverage = courseCalculatedAverage;
 exports.userStatedGPAAverage = userStatedGPAAverage;
 
@@ -968,3 +1036,4 @@ exports.validateUser = validateUser;
 exports.login = login;
 
 exports.generateTemporaryCode = generateTemporaryCode;
+exports.generateMessage = generateMessage;

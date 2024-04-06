@@ -33,18 +33,28 @@ function responseTemplate(errors, value) {
           a. I think just message success and value; if it fails, pop up modal. Otherwise it does whatever success means
       14. (TODO) Set up database data export to files or something because tsql sometimes just creates cursed tables
           a. This was the wholw thing can be reloaded in case of cursed table
-      TODO Axe teacher averages but leave course advice comments
+      TODO Axe teacher comments, leave averages and course advice comments
         // Link ratemyprof for any teacher-specific feedback ,be careful with the messaging
           // Put posters up[ with different quesions, followed by try our app today at with a qr code?
             // Questions: Answering the age old question of which major has it w\best (show overlapping n)
-              // Planning courses next quarter? Want to find out what courses are the easiest? Look at this to see what courses have what difficulty
+              // A place for students to anonymously place section-specific feedback all quarter long
+                // Volunteering to provide input on things teachers can change now
+              // Emphasize benefits for students: work life balance, egalitarian data source
+                // Follow the chatgpt strats; launch the pilot in two weeks, and then we consider shutting down from there
+                  // This way we can force users
+                  // Look at all the pitfalls mentioned by gpt and avoid them, provide examples of the benefits it provides
+                    // Having profs on our side won't hurt
+                    // AVPOID THE PITFALLS OF RATEMYPROF, ADVERTISE THIS TO THEM; emphasize mental health
+                    // End on an appeal to rose-hulman excellence
+              // Planning courses next quarter? Want to find out what courses are the easiest/best for maintaining a work life balance? Look at this to see what courses have what difficulty
+                // Looking for a tie breaker between HSSA courses?
               // Find anonymous (we only store an irreversible hash), verified comments and grades and leave tips for other users
                 // Leave the grades your are and aren't proud of, for future generations of rose students
                 // Had a bad test or quiz? Homework overwhelming?
                   // Leave a warning for others!
       TODO (write a frontend story and then determine what endpoints still need to be entered)
         // Have frontend display distributions smoothed (this gives illusion of lots of info)
-          // <Endpoint> returns the list of data instead of averaging it for all the average ones
+          // <Endpoint> returns the std dev and mean of data instead of averaging it for all the average ones
         // Really need the data loading bars
           // Return counts of the things that are being calculated with averages <ENDPOINT>
             // Prolly just implement this and the above by literally subbing out the avg for count, the column
@@ -73,7 +83,7 @@ function responseTemplate(errors, value) {
         // Endpoints that haven't been implemented marked with <ENDPOINT>
           */
 
-  
+
 // POST
 // TODO: General QA Stuff; no freezing, edge cases (thinking pagination), and slowness
 // Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
@@ -251,10 +261,12 @@ router.get('/users_calculated_average', async function(req, res) {
   let isTripleMajor = req.query.isTripleMajor;
 
   let message2 =  await ApplicationServices.userCalculatedAverage(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
-  if (message2.success) {
-    res.send(message2);
+  let message3 =  await ApplicationServices.userCalculatedAverageCount(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+  let message4 =  await ApplicationServices.userCalculatedAverageStdDev(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+  if (message2.success && message3.success && message4.success) {
+    res.send(ApplicationServices.generateMessage(true,{avergae:message2.message,count:message3.message,stddev:message4.message}));
   } else {
-    res.send(message2);
+    res.send(ApplicationServices.generateMessage(false,{}));
   }
 });
 router.get('/courses_calculated_average', async function(req, res) {
