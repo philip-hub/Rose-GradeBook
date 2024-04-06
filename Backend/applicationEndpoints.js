@@ -54,9 +54,9 @@ function responseTemplate(errors, value) {
                   // Leave a warning for others!
       TODO (write a frontend story and then determine what endpoints still need to be entered)
         // Have frontend display distributions smoothed (this gives illusion of lots of info)
-          // <Endpoint> returns the std dev and mean of data instead of averaging it for all the average ones
+          // returns the std dev and mean of data instead of averaging it for all the average ones
         // Really need the data loading bars
-          // Return counts of the things that are being calculated with averages <ENDPOINT>
+          // Return counts of the things that are being calculated for averages
             // Prolly just implement this and the above by literally subbing out the avg for count, the column
         // Imagining the flow: 
             // They sign up <ENDPOINT> (implement email)
@@ -209,13 +209,55 @@ router.get('/logout', async function(req, res) {
   );
 });
 // TODO
-  // Will query based on the dropdown option from the search, provided by these
-    // Show loading as the first result while the query is loading
-  // Learn how to stall on frontend
-    // Only one search one second after stopping inputs
-  // Might have to add year and/or quarter to make thing more efficient; less huge search result set
-// Example: http://localhost:8080/application/suggest_courses?searchstr=holl
+  // Use the result of this on the dropdown along with dropdowns after with the other data
+    // The other data dropdowns will be populated by the selecteds of the returned from the dropdowns accumulated options
+// TODO <endpoint> the options for course entry shuld only show up (invisible) after year and quarter dropdowns populated
+// Example: http://localhost:8080/application/suggest_course_search_parameter?searchstr=holl
 router.get('/suggest_courses', async function(req, res) {
+  let searchstr = req.query.searchstr;
+  let year = req.query.year;
+  let quarter = req.query.quarter;
+  let toRet = []; // add matching query results and result type
+
+  if (!year || !quarter) {
+    res.send("Year or quarter not entered!");
+    return;
+  }
+
+  let message2 = await ApplicationServices.readCourses(null,null,null,null,null, year,quarter,null);
+  if (message2.success) {
+    let courses = message2.message;
+    let curDex = 0;
+    for (let idx = 0; idx < courses.length; idx++) { // only works because sorted by coursedeptandnumber
+      let prevDex = curDex-1;
+      let curCourse = courses[idx];
+      let cid = curCourse.courseid;
+      let toAdd = (curCourse.coursedeptandnumber.toString().toLowerCase()).indexOf(searchstr.toString().toLowerCase()) != -1;
+      if (toAdd) {
+        if (curDex == 0) {
+          let obj = {};
+          obj[cid] = curCourse;
+          toRet.push(obj);
+        } else {
+          let firstKey = Object.keys(toRet[prevDex])[0];
+          if (!firstKey) { // new course
+            let obj = {};
+            obj[cid] = curCourse;
+            toRet.push(obj);
+            curDex++;
+          } else { // part of existing course
+            toRet[prevDex][cid] = curCourse;
+          }
+        }
+      }
+    }
+    res.send(toRet);
+  } else {
+    res.send(toRet);
+  }
+});
+// Example: http://localhost:8080/application/suggest_course_search_parameter?searchstr=holl
+router.get('/suggest_course_searches', async function(req, res) {
   let searchstr = req.query.searchstr;
   let toRet = []; // add matching query results and result type
 
@@ -264,9 +306,9 @@ router.get('/users_calculated_average', async function(req, res) {
   let message3 =  await ApplicationServices.userCalculatedAverageCount(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
   let message4 =  await ApplicationServices.userCalculatedAverageStdDev(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
   if (message2.success && message3.success && message4.success) {
-    res.send(ApplicationServices.generateMessage(true,{avergae:message2.message,count:message3.message,stddev:message4.message}));
+    res.send(ApplicationServices.generateMessage(true,{average:message2.message,count:message3.message,stddev:message4.message}));
   } else {
-    res.send(ApplicationServices.generateMessage(false,{}));
+    res.send(ApplicationServices.generateMessage(false,{average:message2.message,count:message3.message,stddev:message4.message}));
   }
 });
 router.get('/courses_calculated_average', async function(req, res) {
@@ -279,10 +321,12 @@ router.get('/courses_calculated_average', async function(req, res) {
   let coursedeptandnumber = req.query.coursedeptandnumber;
 
   let message2 = await ApplicationServices.courseCalculatedAverage(courseid, department, credits, professor, year, quarter, coursedeptandnumber);
-  if (message2.success) {
-    res.send(message2);
+  let message3 = await ApplicationServices.courseCalculatedAverageCount(courseid, department, credits, professor, year, quarter, coursedeptandnumber);
+  let message4 = await ApplicationServices.courseCalculatedAverageStdDev(courseid, department, credits, professor, year, quarter, coursedeptandnumber);
+  if (message2.success && message3.success && message4.success) {
+    res.send(ApplicationServices.generateMessage(true,{average:message2.message,count:message3.message,stddev:message4.message}));
   } else {
-    res.send(message2);
+    res.send(ApplicationServices.generateMessage(false,{average:message2.message,count:message3.message,stddev:message4.message}));
   }
 });
 // Example: http://localhost:8080/application/users_stated_gpa_average/?forThisUser=true
@@ -298,10 +342,12 @@ router.get('/users_stated_gpa_average', async function(req, res) {
   let isTripleMajor = req.query.isTripleMajor;
 
   let message2 =  await ApplicationServices.userStatedGPAAverage(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
-  if (message2.success) {
-    res.send(message2);
+  let message3 =  await ApplicationServices.userStatedGPAAverageCount(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+  let message4 =  await ApplicationServices.userStatedGPAAverageStdDev(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor);
+  if (message2.success && message3.success && message4.success) {
+    res.send(ApplicationServices.generateMessage(true,{average:message2.message,count:message3.message,stddev:message4.message}));
   } else {
-    res.send(message2);
+    res.send(ApplicationServices.generateMessage(false,{average:message2.message,count:message3.message,stddev:message4.message}));
   }
 });
 

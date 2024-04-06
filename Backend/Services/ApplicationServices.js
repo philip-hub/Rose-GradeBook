@@ -300,7 +300,7 @@ async function readCourses (courseid, name, department, credits, professor, year
     if (credits) { sql += " and Credits=@credits" }
     if (professor) { sql += " and Professor=@professor" }
     if (year) { sql += " and Year=@year" }
-    if (quarter) { sql += " and Dept=@quarter" }
+    if (quarter) { sql += " and Quarter=@quarter" }
     if (coursedeptandnumber) { sql += " and CourseDeptAndNumber=@coursedeptandnumber" }
     sql += " ORDER BY CourseDeptAndNumber";
 
@@ -348,7 +348,7 @@ async function readCoursesPagination(page, courseid, name, department, credits, 
     if (credits) { sql += " and Credits=@credits" }
     if (professor) { sql += " and Professor=@professor" }
     if (year) { sql += " and Year=@year" }
-    if (quarter) { sql += " and Dept=@quarter" }
+    if (quarter) { sql += " and Quarter=@quarter" }
     if (coursedeptandnumber) { sql += " and CourseDeptAndNumber=@coursedeptandnumber" }
     sql += ` ORDER BY CourseDeptAndNumber OFFSET (${page-1})*${pageSize} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
 
@@ -401,7 +401,7 @@ async function numPages(courseid, name, department, credits, professor, year, qu
     if (credits) { sql += " and Credits=@credits" }
     if (professor) { sql += " and Professor=@professor" }
     if (year) { sql += " and Year=@year" }
-    if (quarter) { sql += " and Dept=@quarter" }
+    if (quarter) { sql += " and Quarter=@quarter" }
     if (coursedeptandnumber) { sql += " and CourseDeptAndNumber=@coursedeptandnumber" }
     // sql += ` ORDER BY CourseDeptAndNumber OFFSET (${page-1})*${pageSize} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
 
@@ -526,7 +526,6 @@ async function setupUserCalculatedAverage(userid, forThisUser, standing, major) 
             return generateMessage(false,err);
         }
     });
-console.log(sql);
     request.addParameter('userid', types.Int, userid);
     if (standing) { request.addParameter('standing', types.VarChar, standing); }
     if (major) { request.addParameter('major', types.VarChar, major); }
@@ -649,7 +648,83 @@ async function courseCalculatedAverage(courseid, department, credits, professor,
     
     return generateMessage((rows1.length==1&&rows1[0][0].value!=null),(rows1.length==1&&rows1[0][0].value!=null)?rows1[0][0].value:"Didn't return average or average null");
 }
+async function courseCalculatedAverageCount(courseid, department, credits, professor, year, quarter, coursedeptandnumber) {
+    const connection = await getNewConnection(false,true);
+    // we're getting the count of takes, but the std dev between courses; this just makes sense to me
+    let sql = `SELECT COUNT(*) FROM Takes T JOIN Courses c ON t.CourseID=c.CourseID
+                    WHERE 0=0 
+                    `;
+    if (courseid) { sql += " AND c.courseid=@courseid"}
+    if (department) { sql += " and c.Dept=@department" }
+    if (credits) { sql += " AND c.credits=@credits"}
+    if (quarter) { sql += " and c.quarter=@quarter" }
+    if (professor) { sql += " and c.professor=@professor" }
+    if (coursedeptandnumber) { sql += " and c.coursedeptandnumber=@coursedeptandnumber" }    
+    if (year) { sql += " and Year=@year" }
+    
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
 
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    
+    return generateMessage((rows1.length==1&&rows1[0][0].value!=null),(rows1.length==1&&rows1[0][0].value!=null)?rows1[0][0].value:"Didn't return average or average null");
+}
+async function courseCalculatedAverageStdDev(courseid, department, credits, professor, year, quarter, coursedeptandnumber) {
+    const connection = await getNewConnection(false,true);
+
+    let sql = `SELECT STDEV(averages.average) as average FROM 
+                (
+                    SELECT AVG(Grade) as average FROM Takes T JOIN Courses c ON t.CourseID=c.CourseID
+                    WHERE 0=0 
+                    `;
+    if (courseid) { sql += " AND c.courseid=@courseid"}
+    if (department) { sql += " and c.Dept=@department" }
+    if (credits) { sql += " AND c.credits=@credits"}
+    if (quarter) { sql += " and c.quarter=@quarter" }
+    if (professor) { sql += " and c.professor=@professor" }
+    if (coursedeptandnumber) { sql += " and c.coursedeptandnumber=@coursedeptandnumber" }    
+    if (year) { sql += " and Year=@year" }
+    
+    sql += ` GROUP BY CourseDeptAndNumber ) AS averages`;
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    
+    return generateMessage((rows1.length==1&&rows1[0][0].value!=null),(rows1.length==1&&rows1[0][0].value!=null)?rows1[0][0].value:"Didn't return average or average null");
+}
 // TODO 3d. Calculate averages from stated gpa
 //     - Maybe give the user a little message if they match (like, congrats!)
 //     - And like a gamified load bar on their profile of what % of their data has been entered by them
@@ -662,6 +737,70 @@ async function userStatedGPAAverage(userid, forThisUser, standing, major, isDoub
     const connection = await getNewConnection(false,true);
 
     let sql = `SELECT AVG(GPA) as average FROM Users u WHERE 0=0`;
+    if (forThisUser) { sql += " AND UserID=@userid"}
+    if (standing) { sql += " and standing=@standing" }
+    if (major) { sql += " and UserID IN (SELECT u.UserID FROM Users u JOIN UserMajors um ON u.UserID=um.UserID WHERE major=@major)" }
+    if (isDoubleMajor) { sql += " AND UserID IN (SELECT UserID FROM Users u WHERE (SELECT COUNT(*) FROM UserMajors um WHERE um.UserID=u.UserID) = 2)" }
+    if (isTripleMajor) { sql += " AND UserID IN (SELECT UserID FROM Users u WHERE (SELECT COUNT(*) FROM UserMajors um WHERE um.UserID=u.UserID) = 3)" }
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid);
+    if (standing) { request.addParameter('standing', types.VarChar, standing); }
+    if (major) { request.addParameter('major', types.VarChar, major); }
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    return generateMessage((rows1.length==1&&rows1[0][0].value!=null),(rows1.length==1&&rows1[0][0].value!=null)?rows1[0][0].value:"Didn't return an average or average null");
+}
+async function userStatedGPAAverageCount(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
+    const connection = await getNewConnection(false,true);
+
+    let sql = `SELECT COUNT(GPA) as average FROM Users u WHERE 0=0`;
+    if (forThisUser) { sql += " AND UserID=@userid"}
+    if (standing) { sql += " and standing=@standing" }
+    if (major) { sql += " and UserID IN (SELECT u.UserID FROM Users u JOIN UserMajors um ON u.UserID=um.UserID WHERE major=@major)" }
+    if (isDoubleMajor) { sql += " AND UserID IN (SELECT UserID FROM Users u WHERE (SELECT COUNT(*) FROM UserMajors um WHERE um.UserID=u.UserID) = 2)" }
+    if (isTripleMajor) { sql += " AND UserID IN (SELECT UserID FROM Users u WHERE (SELECT COUNT(*) FROM UserMajors um WHERE um.UserID=u.UserID) = 3)" }
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid);
+    if (standing) { request.addParameter('standing', types.VarChar, standing); }
+    if (major) { request.addParameter('major', types.VarChar, major); }
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    return generateMessage((rows1.length==1&&rows1[0][0].value!=null),(rows1.length==1&&rows1[0][0].value!=null)?rows1[0][0].value:"Didn't return an average or average null");
+}
+async function userStatedGPAAverageStdDev(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!");
+    }
+
+    const connection = await getNewConnection(false,true);
+
+    let sql = `SELECT STDEV(GPA) as average FROM Users u WHERE 0=0`;
     if (forThisUser) { sql += " AND UserID=@userid"}
     if (standing) { sql += " and standing=@standing" }
     if (major) { sql += " and UserID IN (SELECT u.UserID FROM Users u JOIN UserMajors um ON u.UserID=um.UserID WHERE major=@major)" }
@@ -1028,8 +1167,14 @@ exports.validateCourseID = validateCourseID;
 exports.userCalculatedAverage = userCalculatedAverage;
 exports.userCalculatedAverageCount = userCalculatedAverageCount;
 exports.userCalculatedAverageStdDev = userCalculatedAverageStdDev;
+
 exports.courseCalculatedAverage = courseCalculatedAverage;
+exports.courseCalculatedAverageCount = courseCalculatedAverageCount;
+exports.courseCalculatedAverageStdDev = courseCalculatedAverageStdDev;
+
 exports.userStatedGPAAverage = userStatedGPAAverage;
+exports.userStatedGPAAverageCount = userStatedGPAAverageCount;
+exports.userStatedGPAAverageStdDev = userStatedGPAAverageStdDev;
 
 exports.isValidated = isValidated;
 exports.validateUser = validateUser;
