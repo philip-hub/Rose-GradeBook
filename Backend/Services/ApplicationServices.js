@@ -68,7 +68,7 @@ async function createUser (email,username,password,gpa,standing,isadmin,majors,v
 }
 async function readUser (userid) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
     let toRet = [];
 
@@ -99,7 +99,7 @@ async function readUser (userid) {
 }
 async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majors) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     if (!checkValidMajors(majors)) {
@@ -138,7 +138,7 @@ async function updateUser (userid,password,gpa,standing,isadmin,isvalidated,majo
 }
 async function updatePassword(userid,password,newPassword){
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     let connection = await getNewConnection(false,false);
@@ -173,7 +173,7 @@ async function updatePassword(userid,password,newPassword){
 
 async function createTake (userid,courseid,grade) { // returns user id for session
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
     let message = await validateCourseID(courseid);
     if (!message.success) {
@@ -211,7 +211,7 @@ async function createTake (userid,courseid,grade) { // returns user id for sessi
 
 async function readTakes (userid) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     let toRet = [];
@@ -252,7 +252,7 @@ async function updateTake (userid,courseid,grade) {
 // No need to validate, I think; delete won't violate foreign key by not doing anything
 async function deleteTake(userid,courseid) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
     let message = await validateCourseID(courseid);
     if (!message.success) {
@@ -279,6 +279,27 @@ async function deleteTake(userid,courseid) {
     let rows1 = await execSqlRequestDonePromise(request);
     
     return generateMessage(true,"Successfully deleted taking a course!");
+}
+
+async function numTakes () {
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select count(*) from Takes';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    connection.execSql(request);
+
+    let rows1 = await execSqlRequestDonePromise (request);
+    let numTakes = rows1[0][0].value; // first (and only) row, first (and only) column
+    
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(true,numTakes);
+
 }
 
 //#endregion
@@ -512,7 +533,7 @@ async function userCalculatedAverage (userid, forThisUser, standing, major, isDo
 }
 async function setupUserCalculatedAverage(userid, forThisUser, standing, major) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     const connection = await getNewConnection(false,true);
@@ -732,7 +753,7 @@ async function courseCalculatedAverageStdDev(courseid, department, credits, prof
 
 async function userStatedGPAAverage(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     const connection = await getNewConnection(false,true);
@@ -764,7 +785,7 @@ async function userStatedGPAAverage(userid, forThisUser, standing, major, isDoub
 }
 async function userStatedGPAAverageCount(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     const connection = await getNewConnection(false,true);
@@ -796,7 +817,7 @@ async function userStatedGPAAverageCount(userid, forThisUser, standing, major, i
 }
 async function userStatedGPAAverageStdDev(userid, forThisUser, standing, major, isDoubleMajor, isTripleMajor) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     const connection = await getNewConnection(false,true);
@@ -834,7 +855,7 @@ async function userStatedGPAAverageStdDev(userid, forThisUser, standing, major, 
     // Call right after login, otherwise redirect
 async function isValidated(userid) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     const connection = await getNewConnection(false,true);
@@ -864,7 +885,7 @@ async function isValidated(userid) {
 
 async function validateUser(userid,validationcode) {
     if (!userid) {
-        return generateMessage(false,"Not logged in!");
+        return generateMessage(false,"Not logged in!",99);
     }
 
     let connection = await getNewConnection(false,false);
@@ -1031,8 +1052,8 @@ function sendEmailPromise(mailOptions, transporter) {
 
 //#region Helper Functions
 
-function generateMessage(success, message) {
-    return {success:success,message:message,statuscode:200};
+function generateMessage(success, message, code) {
+    return {success:success,message:message,statuscode:code};
 }
 
 function checkValidMajors(majorsstr) {
@@ -1190,6 +1211,7 @@ exports.createTake = createTake;
 exports.readTakes = readTakes;
 exports.updateTake = updateTake;
 exports.deleteTake = deleteTake;
+exports.numTakes = numTakes;
 
 exports.readCourses = readCourses;
 exports.readCoursesPagination = readCoursesPagination;

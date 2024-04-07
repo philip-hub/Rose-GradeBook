@@ -20,10 +20,6 @@ router.use(session(
 
 var ApplicationServices = require('./Services/ApplicationServices.js');
 
-function responseTemplate(errors, value) {
-  // see doc on spring http message response template (this will be json payload for everything)
-}
-
 // Overview
   // This API will allow for all of the communication necessary for the frontend of OpenGradebook
 
@@ -32,7 +28,9 @@ function responseTemplate(errors, value) {
       13. (TODO) Get the endpoints and error stuff done this weekend; AWS and Redis stuff is the goal this week
           a. I think just message success and value; if it fails, pop up modal. Otherwise it does whatever success means
       14. (TODO) Set up database data export to files or something because tsql sometimes just creates cursed tables
-          a. This was the wholw thing can be reloaded in case of cursed table
+          a. This way the whole thing can be reloaded in case of cursed table
+          b. https://www.sqlshack.com/importexport-data-sql-server-using-sql-server-import-export-wizard/
+          c. https://learn.microsoft.com/en-us/sql/integration-services/import-export-data/start-the-sql-server-import-and-export-wizard?view=sql-server-ver16
       TODO Axe teacher comments, leave averages and course advice comments
         // Link ratemyprof for any teacher-specific feedback ,be careful with the messaging
           // Put posters up[ with different quesions, followed by try our app today at with a qr code?
@@ -52,15 +50,16 @@ function responseTemplate(errors, value) {
                 // Leave the grades your are and aren't proud of, for future generations of rose students
                 // Had a bad test or quiz? Homework overwhelming?
                   // Leave a warning for others!
-      TODO (write a frontend story and then determine what endpoints still need to be entered)
+      <endpoint> make sure endpoints redirect once the projects are merged
+      TODO Implement frontend story and then determine what endpoints still need to be entered
         // Have frontend display distributions smoothed (this gives illusion of lots of info)
           // returns the std dev and mean of data instead of averaging it for all the average ones
         // Really need the data loading bars
           // Return counts of the things that are being calculated for averages
             // Prolly just implement this and the above by literally subbing out the avg for count, the column
         // Imagining the flow: 
-            // They sign up <ENDPOINT> (implement email)
-            // After they auth, directs them to give grades on any four courses <ENDPOINT> (suggest with only courses)
+            // They sign up
+            // After they auth, directs them to give grades on any four courses (suggest with only courses)
               // They receive a modal message thanking them and asking for their data, and to check back in regularly to see what's there
                 // Modal contains four courses to input
                   // Dropdowns for quarter and year, then search for courses within their
@@ -72,7 +71,7 @@ function responseTemplate(errors, value) {
               // And sample sizes and distributions
               // This allows them to take what is said with a grain of salt
             // They can click into them and get the same little grade entry boxes as in the initial model; the click a button to say they took it and then enter the data to all the courses under them
-              // Thank you modal after this too. Give total count of entries into takes <Endpoint>. Have a little picture of a loadinging bar vertical to the goal.
+              // Thank you modal after this too. Give total count of entries into takes. Have a little picture of a loadinging bar vertical to the goal.
               // I should put grain of salt warnings under everything
               // The course page has the avg, distribution, and number of data points
                 // It also has a list of sections; you can mark that you have taken one and then 
@@ -80,10 +79,14 @@ function responseTemplate(errors, value) {
           // User profile page: update profile, emphasize not having to state username if you want
           // If logged out, show modal <Endpoint> (standardize error codes; logout = 1)
             // Do it lazily, only on errors that warrant specidfics; just try to reserve special number for logins for now
+            // Otherwise just show error message directly from message sent
         // Endpoints that haven't been implemented marked with <ENDPOINT>
           */
 
-
+// Error Codes
+  // 99 - Not logged in
+  // Everything else just give the message directly as it appears when the success is false
+/** */
 // POST
 // TODO: General QA Stuff; no freezing, edge cases (thinking pagination), and slowness
 // Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
@@ -95,9 +98,9 @@ router.post('/take', async function(req, res) {
 
   let message = await ApplicationServices.createTake(userid,courseid,grade);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=2.49&standing=Freshman&isadmin=1&majors=Physics;Computer Science
@@ -120,7 +123,7 @@ router.post('/signup', async function(req, res) { // use query parameters: https
     if (message2.success) {
       let userid = message.message;
       req.session.userid = userid;
-      res.send(message.success);
+      res.send(ApplicationServices.generateMessage(true,{createUser:message.message,verificationEmail:message2.message}));
     } else {
       res.send(message2);
     }
@@ -139,9 +142,9 @@ router.get('/user', async function(req, res) { // use query parameters
   let userid = req.session.userid;
   let message = await ApplicationServices.readUser(userid);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // Example: http://localhost:8080/application/take
@@ -152,9 +155,9 @@ router.get('/take', async function(req, res) {
   let userid = req.session.userid;
   let message = await ApplicationServices.readTakes(userid);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // TODO Figure out if we need to validate department as well
@@ -181,9 +184,9 @@ router.get('/courses', async function(req, res) {
 
   let message2 = await ApplicationServices.readCoursesPagination(page, courseid, name, department, credits, professor, year, quarter, coursedeptandnumber);
   if (message2.success) {
-    res.send(message2.message);
+    res.send(message2);
   } else {
-    res.send("Course ID invalid");
+    res.send(ApplicationServices.generateMessage(false,"Course ID invalid"));
   }
 });
 // Example: http://localhost:8080/application/login?username=p&password=p
@@ -199,9 +202,9 @@ router.get('/login', async function(req, res) { // should have a specific return
     let userid = message.message;
     req.session.userid = userid;
     console.log("User: "+req.session.userid);
-    res.send("Successfully logged in!");
+    res.send(ApplicationServices.generateMessage(true,"Successfully logged in!"));
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // Example: http://localhost:8080/application/logout
@@ -209,8 +212,18 @@ router.get('/logout', async function(req, res) {
   req.session.userid = null;
   // res.redirect("/login");
   res.send(
-    "Logged out!"
+    ApplicationServices.generateMessage(true,"Logged out!")
   );
+});
+// Example: http://localhost:8080/application/numTakes
+// Need to call is_validated afterwards; depending on the result, redirect appropriately
+router.get('/num_takes', async function(req, res) { // should have a specific return for redirectinh to validstion or to the dashboard/any other page
+  let message = await ApplicationServices.numTakes();
+  if (message.success) {
+    res.send(message);
+  } else {
+    res.send(message);
+  }
 });
 // TODO
   // Use the result of this on the dropdown along with dropdowns after with the other data
@@ -224,12 +237,17 @@ router.get('/suggest_courses', async function(req, res) {
   let toRet = []; // add matching query results and result type
   
   if (searchstr.length <= 2) {
-    res.send([]);
+    res.send(ApplicationServices.generateMessage(true,[])); // don't want to throw err message
     return;
   }
 
-  if (!year || !quarter) {
-    res.send("Year or quarter not entered!");
+  if (!year) {
+    res.send(ApplicationServices.generateMessage(false, "Year not entered!"));
+    return;
+  }
+
+  if (!quarter) {
+    res.send(ApplicationServices.generateMessage(false, "Quarter not entered!"));
     return;
   }
 
@@ -260,22 +278,26 @@ router.get('/suggest_courses', async function(req, res) {
         }
       }
     }
-    res.send(toRet);
+    res.send(ApplicationServices.generateMessage(true,toRet));
   } else {
-    res.send(toRet);
+    res.send(message2);
   }
 });
 // Example: http://localhost:8080/application/suggest_course_searches?searchstr=holl
 router.get('/suggest_course_searches', async function(req, res) {
   let searchstr = req.query.searchstr;
+  let year = req.query.year;
   let toRet = []; // add matching query results and result type
 
   if (searchstr.length <= 2) {
-    res.send(toRet);
+    res.send(ApplicationServices.generateMessage(true,[]));
     return;
   }
-
-  let message2 = await ApplicationServices.readCourses(null,null,null,null,null,null,null);
+  if (!year) {
+    res.send(ApplicationServices.generateMessage(false,"Year not entered!"));
+    return;
+  }
+  let message2 = await ApplicationServices.readCourses(null,null,null,null,null,year,null,null);
   if (message2.success) {
     let courses = message2.message;
     courses.forEach((course) => {
@@ -288,14 +310,32 @@ router.get('/suggest_course_searches', async function(req, res) {
       addIfMatchCourse(searchstr, course, "dept", toRet);
       // addIfMatchCourse(searchstr, course, "credits", toRet);
       addIfMatchCourse(searchstr, course, "professor", toRet);
-      addIfMatchCourse(searchstr, course, "year", toRet);
-      addIfMatchCourse(searchstr, course, "quarter", toRet);
+      // addIfMatchCourse(searchstr, course, "year", toRet);
+      // addIfMatchCourse(searchstr, course, "quarter", toRet);
       addIfMatchCourse(searchstr, course, "coursedeptandnumber", toRet);
     });
     toRet = removeDuplicates(toRet);
-    res.send(toRet);
+    
+    toRet.sort((a,b) => {
+        // Use toUpperCase() to ignore character casing
+        let comparison = 0;
+        if (a.value > b.value) {
+          comparison = 1;
+        } else if (a.value < b.value) {
+          comparison = -1;
+        } else {
+          if (a.type > b.type) {
+            comparison = 1;
+          } else if (a.type < b.type) {
+            comparison = -1;
+          }
+        }
+        return comparison;
+    });
+
+    res.send(ApplicationServices.generateMessage(true,toRet));
   } else {
-    res.send(toRet);
+    res.send(message2);
   }
 });
 // Example: http://localhost:8080/application/users_calculated_average?forThisUser=true
@@ -374,9 +414,9 @@ router.put('/user', async function(req, res) { // use query parameters
 
   let message = await ApplicationServices.updateUser (userid,password,gpa,standing,isadmin,isvalidated,majors);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // Example: http://localhost:8080/application/take?courseid=6701&grade=3.2
@@ -388,9 +428,9 @@ router.put('/take', async function(req, res) {
 
   let message = await ApplicationServices.updateTake(userid,courseid,grade);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // Example: http://localhost:8080/application/password?password=p&newpassword=giancarlo esposito
@@ -402,9 +442,9 @@ router.put('/password', async function(req, res) {
 
   let message = await ApplicationServices.updatePassword(userid,password,newpassword);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 // Example: http://localhost:8080/application/validate_user?validationcode=3429
@@ -414,9 +454,9 @@ router.put('/validate_user', async function(req, res) {
   let validationcode = req.query.validationcode;
   let message = await ApplicationServices.validateUser(userid, validationcode);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 
@@ -429,9 +469,9 @@ router.delete('/take', async function(req, res) {
   
   let message = await ApplicationServices.deleteTake(userid,courseid);
   if (message.success) {
-    res.send(message.message);
+    res.send(message);
   } else {
-    res.send(message.message);
+    res.send(message);
   }
 });
 
