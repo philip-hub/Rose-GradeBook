@@ -1,3 +1,4 @@
 Backend/node_modules/
 Frontend/node_modules/
 Backend/connectivity_config.json
+Backend/email_config.json

@@ -14,13 +14,33 @@ BEGIN TRANSACTION
 IF ((SELECT COUNT(*) FROM Users WHERE Email=@email) > 0)
 BEGIN
 
-IF ((SELECT IsValidated FROM Users WHERE Email=@email) = 1)
-BEGIN
-ROLLBACK TRANSACTION;
-RETURN(4);
-END
+    IF ((SELECT IsValidated FROM Users WHERE Email=@email) = 1)
+    BEGIN
+    ROLLBACK TRANSACTION;
+    RETURN(4);
+    END
 
-DELETE FROM Users WHERE Email=@email; 
+    SET @userid = (SELECT UserID FROM Users WHERE Email=@email)
+
+    DELETE FROM UserMajors WHERE UserID=@userid; 
+    IF (@@ERROR <> 0)
+    BEGIN
+    ROLLBACK TRANSACTION;
+    RETURN(5);
+    END
+    DELETE FROM UserSignups WHERE UserID=@userid; 
+    IF (@@ERROR <> 0)
+    BEGIN
+    ROLLBACK TRANSACTION;
+    RETURN(6);
+    END
+    DELETE FROM Users WHERE Email=@email; 
+    IF (@@ERROR <> 0)
+    BEGIN
+    ROLLBACK TRANSACTION;
+    RETURN(7);
+    END
+
 END
 
 DECLARE @separator varchar(1)=';'

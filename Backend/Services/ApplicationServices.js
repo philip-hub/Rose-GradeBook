@@ -11,6 +11,7 @@ var ConnectionM = require('tedious').Connection;
 var RequestM = require('tedious').Request;
 var types = require('tedious').TYPES;
 const { DateTime } = require("luxon");
+var nodemailer = require('nodemailer');
 
 let pageSize = 20;
 
@@ -998,6 +999,36 @@ const connectPromise = (connection) => {
 }
 //#endregion
 
+//#region Emails
+async function sendValidationEmail(toEmail, validationcode) {
+    var config = JSON.parse(fs.readFileSync("email_config.json"));
+    
+    var transporter = nodemailer.createTransport(config);
+      
+      var mailOptions = {
+        from: config.auth.user,
+        to: toEmail,
+        subject: `Open Gradebook 2FA Email`,
+        text: `Validation Code: ${validationcode}`
+      };
+    return (await sendEmailPromise(mailOptions, transporter));
+}
+
+function sendEmailPromise(mailOptions, transporter) {
+      return new Promise((resolve, reject) => {
+        transporter.sendMail(mailOptions, function(error, info){
+            if (error) {
+              console.log(error);
+              resolve(generateMessage(false,error));
+            } else {
+              console.log('Email sent: ' + info.response);
+              resolve(generateMessage(true,'Email sent: ' + info.response));
+            }
+          });
+    });
+}
+//#endregion
+
 //#region Helper Functions
 
 function generateMessage(success, message) {
@@ -1179,6 +1210,8 @@ exports.userStatedGPAAverageStdDev = userStatedGPAAverageStdDev;
 exports.isValidated = isValidated;
 exports.validateUser = validateUser;
 exports.login = login;
+
+exports.sendValidationEmail = sendValidationEmail;
 
 exports.generateTemporaryCode = generateTemporaryCode;
 exports.generateMessage = generateMessage;

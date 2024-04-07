@@ -114,14 +114,18 @@ router.post('/signup', async function(req, res) { // use query parameters: https
   let validationcode = ApplicationServices.generateTemporaryCode();
   let message = await ApplicationServices.createUser (email,username,password,gpa,standing,isadmin,majors,validationcode);
   if (message.success) {
-    // TODO <endpoint> calling the email thing for the validation code; https://www.w3schools.com/nodejs/nodejs_email.asp
+    // https://medium.com/@dhananjay_71533/send-mail-using-nodemailer-in-node-js-3183366b1b1c
     console.log("Validation Code: "+validationcode);
-    // res.redirect("/validate_user");
-    let userid = message.message;
-    req.session.userid = userid;
-    res.send(message.success);
+    let message2 = await ApplicationServices.sendValidationEmail(email,validationcode);
+    if (message2.success) {
+      let userid = message.message;
+      req.session.userid = userid;
+      res.send(message.success);
+    } else {
+      res.send(message2);
+    }
   } else {
-    res.send(message.success);
+    res.send(message);
   }
 });
 
