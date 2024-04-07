@@ -212,12 +212,17 @@ router.get('/logout', async function(req, res) {
   // Use the result of this on the dropdown along with dropdowns after with the other data
     // The other data dropdowns will be populated by the selecteds of the returned from the dropdowns accumulated options
 // TODO <endpoint> the options for course entry shuld only show up (invisible) after year and quarter dropdowns populated
-// Example: http://localhost:8080/application/suggest_course_search_parameter?searchstr=holl
+// Example: http://localhost:8080/application/suggest_courses?year=2021&quarter=Fall&searchstr=csse
 router.get('/suggest_courses', async function(req, res) {
   let searchstr = req.query.searchstr;
   let year = req.query.year;
   let quarter = req.query.quarter;
   let toRet = []; // add matching query results and result type
+  
+  if (searchstr.length <= 2) {
+    res.send([]);
+    return;
+  }
 
   if (!year || !quarter) {
     res.send("Year or quarter not entered!");
@@ -256,7 +261,7 @@ router.get('/suggest_courses', async function(req, res) {
     res.send(toRet);
   }
 });
-// Example: http://localhost:8080/application/suggest_course_search_parameter?searchstr=holl
+// Example: http://localhost:8080/application/suggest_course_searches?searchstr=holl
 router.get('/suggest_course_searches', async function(req, res) {
   let searchstr = req.query.searchstr;
   let toRet = []; // add matching query results and result type
@@ -311,6 +316,7 @@ router.get('/users_calculated_average', async function(req, res) {
     res.send(ApplicationServices.generateMessage(false,{average:message2.message,count:message3.message,stddev:message4.message}));
   }
 });
+// Example: http://localhost:8080/application/courses_calculated_average?department=CSSE
 router.get('/courses_calculated_average', async function(req, res) {
   let courseid = req.query.courseid;
   let department = req.query.department;

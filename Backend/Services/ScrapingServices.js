@@ -117,7 +117,7 @@ async function getSections(year) {
     // document.querySelector("[name=\"termcode\"] option").innerText
         // The dropdown in question
     let toChoose = await getOptions(page, year);
-    let departments = ["CSSE"];//await getDepartments(page);
+    let departments = await getDepartments(page);
     let toRet = {};
     for (let key in toChoose) {
         await getOptionSections(page, year, key, toChoose, departments, toRet);

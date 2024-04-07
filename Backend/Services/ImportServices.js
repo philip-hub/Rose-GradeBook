@@ -51,6 +51,7 @@ const bulkLoadCourses = (courses, sections, year, connection) => {
   bulkLoad.addColumn('Year', types.Date, { nullable: false });
   bulkLoad.addColumn('Quarter', types.VarChar, { length:10,nullable: false });
   bulkLoad.addColumn('CourseDeptAndNumber', types.VarChar, { length:20, nullable: true }); // only not calculated or efficiency tings
+  bulkLoad.addColumn('Section', types.VarChar, { length:5, nullable: true }); // only not calculated or efficiency tings
 
   // execute
   connection.execBulkLoad(bulkLoad, convertToCourseSchema(courses, sections, year));
@@ -79,19 +80,23 @@ function convertToCourseSchema(courses, sections, year) {
           if (sections_quarter.hasOwnProperty(cname) // && toRet.length < 5
           ) {
             // console.log(sections.sections[quarter][cname]["credit_hours"]);
-          toRet.push(
-              {
-                  Name:courses_course.substring(0,100), // it's a name
-                  Dept:dept.substring(0,10),
-                  Credits:sections.sections[quarter][cname]["credit_hours"],
-                  Professor:sections.sections[quarter][cname]["professor"],
-                  Number:cnum,
-                  Year:newYearDate(year),
-                  Quarter:quarter,
-                  CourseDeptAndNumber:dept.substring(0,10)+cnum
-              }
-          );
+            let sections_cname = sections.sections[quarter][cname];
+            for (let i = 0; i < sections_cname.length; i++) {
+              toRet.push(
+                  {
+                      Name:courses_course.substring(0,100), // it's a name
+                      Dept:dept.substring(0,10),
+                      Credits:sections_cname[i]["credit_hours"],
+                      Professor:sections_cname[i]["professor"],
+                      Number:cnum,
+                      Year:newYearDate(year),
+                      Quarter:quarter,
+                      CourseDeptAndNumber:dept.substring(0,10)+cnum,
+                      Section:sections_cname[i]["section"]
+                  }
+              );
             }
+          }
       }
     }
   }

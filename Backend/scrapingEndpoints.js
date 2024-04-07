@@ -30,7 +30,7 @@ router.post('/courses/:year',async function(req,res) {
     // So we assume the site will switch over in May, so anything after that "current" will be next year, and we assume "prev-year" will start existing
     let year = "";
     // We know there will be a valid url for the given year
-    if (req.params.year == curYear+1 || (req.params.year == curYear && ScrapingServices.curMonth() < 4)) { // Means next year and we know it's valid, so we look at the latest ("current"), or we want this year and it hasn't switched yet
+    if (req.params.year == curYear+1 || (req.params.year == curYear && ScrapingServices.curMonth() <= 4)) { // Means next year and we know it's valid, so we look at the latest ("current"), or we want this year and it hasn't switched yet
         year = "current";
     } else { // So we're either looking at this year or years previous once they've been superceded by a current
         year = (req.params.year-1)+"-"+req.params.year;
