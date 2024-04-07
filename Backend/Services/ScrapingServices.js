@@ -117,7 +117,7 @@ async function getSections(year) {
     // document.querySelector("[name=\"termcode\"] option").innerText
         // The dropdown in question
     let toChoose = await getOptions(page, year);
-    let departments = await getDepartments(page);
+    let departments = ["CSSE"];//await getDepartments(page);
     let toRet = {};
     for (let key in toChoose) {
         await getOptionSections(page, year, key, toChoose, departments, toRet);
@@ -189,7 +189,10 @@ async function getPageSections(page, year, quarter, toRet) {
         // if (i == 0) {
         //     console.log(toPush);
         // }
-        toRet[quarter][id] = toPush;
+        if (!toRet[quarter][id]) {
+            toRet[quarter][id] = [];
+        }
+        toRet[quarter][id].push(toPush);
     }
 }
 
