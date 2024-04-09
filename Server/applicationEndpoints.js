@@ -89,7 +89,7 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
 /** */
 // POST
 // TODO: General QA Stuff; no freezing, edge cases (thinking pagination), and slowness
-// Example: http://localhost:8080/application/take?courseid=6700&grade=3.2
+// Example: http://localhost:3000/application/take?courseid=6700&grade=3.2
 router.post('/take', async function(req, res) {
   // userid,courseid,grade
   let userid = req.session.userid;
@@ -103,7 +103,7 @@ router.post('/take', async function(req, res) {
     res.send(message);
   }
 });
-// Example: http://localhost:8080/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=2.49&standing=Freshman&isadmin=1&majors=Physics;Computer Science
+// Example: http://localhost:3000/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=2.49&standing=Freshman&isadmin=1&majors=Physics;Computer Science
 router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
   // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
   let email = req.query.email;
@@ -137,7 +137,7 @@ router.post('/signup', async function(req, res) { // use query parameters: https
 //   //FOR TESTING, DELETE
 //   res.send("usrid: "+req.session.userid);
 // });
-// Example: http://localhost:8080/application/user
+// Example: http://localhost:3000/application/user
 router.get('/user', async function(req, res) { // use query parameters
   let userid = req.session.userid;
   let message = await ApplicationServices.readUser(userid);
@@ -147,7 +147,7 @@ router.get('/user', async function(req, res) { // use query parameters
     res.send(message);
   }
 });
-// Example: http://localhost:8080/application/take
+// Example: http://localhost:3000/application/take
 // Don't bother restricting this to a limited, realistic number (checking on each insert that quarters and year aren't too high)
   // guilt is strat
   // 7 courses at most per quarter
@@ -164,8 +164,8 @@ router.get('/take', async function(req, res) {
   // Also figure out which options are worth making available; need searches going through in a second at most
     // If performance becomes a concern, also separate out the pagination request
   // Of course remember the option to add indices
-// Example: http://localhost:8080/application/courses?courseid=8000
-// Example: http://localhost:8080/application/courses?department=MA
+// Example: http://localhost:3000/application/courses?courseid=8000
+// Example: http://localhost:3000/application/courses?department=MA
 router.get('/courses', async function(req, res) {
   let page = req.query.page;
 
@@ -189,7 +189,7 @@ router.get('/courses', async function(req, res) {
     res.send(ApplicationServices.generateMessage(false,"Course ID invalid"));
   }
 });
-// Example: http://localhost:8080/application/login?username=p&password=p
+// Example: http://localhost:3000/application/login?username=p&password=p
 // TODO
   // Need to call is_validated afterwards; depending on the result, redirect appropriately
 router.get('/login', async function(req, res) { // should have a specific return for redirectinh to validstion or to the dashboard/any other page
@@ -207,7 +207,7 @@ router.get('/login', async function(req, res) { // should have a specific return
     res.send(message);
   }
 });
-// Example: http://localhost:8080/application/logout
+// Example: http://localhost:3000/application/logout
 router.get('/logout', async function(req, res) {
   req.session.userid = null;
   // res.redirect("/login");
@@ -215,7 +215,7 @@ router.get('/logout', async function(req, res) {
     ApplicationServices.generateMessage(true,"Logged out!")
   );
 });
-// Example: http://localhost:8080/application/numTakes
+// Example: http://localhost:3000/application/numTakes
 // Need to call is_validated afterwards; depending on the result, redirect appropriately
 router.get('/num_takes', async function(req, res) { // should have a specific return for redirectinh to validstion or to the dashboard/any other page
   let message = await ApplicationServices.numTakes();
@@ -229,7 +229,7 @@ router.get('/num_takes', async function(req, res) { // should have a specific re
   // Use the result of this on the dropdown along with dropdowns after with the other data
     // The other data dropdowns will be populated by the selecteds of the returned from the dropdowns accumulated options
 // TODO <endpoint> the options for course entry shuld only show up (invisible) after year and quarter dropdowns populated
-// Example: http://localhost:8080/application/suggest_courses?year=2021&quarter=Fall&searchstr=csse
+// Example: http://localhost:3000/application/suggest_courses?year=2021&quarter=Fall&searchstr=csse
 router.get('/suggest_courses', async function(req, res) {
   let searchstr = req.query.searchstr;
   let year = req.query.year;
@@ -283,7 +283,7 @@ router.get('/suggest_courses', async function(req, res) {
     res.send(message2);
   }
 });
-// Example: http://localhost:8080/application/suggest_course_searches?searchstr=holl
+// Example: http://localhost:3000/application/suggest_course_searches?searchstr=holl
 router.get('/suggest_course_searches', async function(req, res) {
   let searchstr = req.query.searchstr;
   let year = req.query.year;
@@ -338,10 +338,10 @@ router.get('/suggest_course_searches', async function(req, res) {
     res.send(message2);
   }
 });
-// Example: http://localhost:8080/application/users_calculated_average?forThisUser=true
-// Example: http://localhost:8080/application/users_calculated_average?major=Computer Science
-// Example: http://localhost:8080/application/users_calculated_average?isDoubleMajor=true
-// Example: http://localhost:8080/application/users_calculated_average?isTripleMajor=true
+// Example: http://localhost:3000/application/users_calculated_average?forThisUser=true
+// Example: http://localhost:3000/application/users_calculated_average?major=Computer Science
+// Example: http://localhost:3000/application/users_calculated_average?isDoubleMajor=true
+// Example: http://localhost:3000/application/users_calculated_average?isTripleMajor=true
 router.get('/users_calculated_average', async function(req, res) {
 
   let userid = req.session.userid;
@@ -360,7 +360,7 @@ router.get('/users_calculated_average', async function(req, res) {
     res.send(ApplicationServices.generateMessage(false,{average:message2.message,count:message3.message,stddev:message4.message}));
   }
 });
-// Example: http://localhost:8080/application/courses_calculated_average?department=CSSE
+// Example: http://localhost:3000/application/courses_calculated_average?department=CSSE
 router.get('/courses_calculated_average', async function(req, res) {
   let courseid = req.query.courseid;
   let department = req.query.department;
@@ -379,10 +379,10 @@ router.get('/courses_calculated_average', async function(req, res) {
     res.send(ApplicationServices.generateMessage(false,{average:message2.message,count:message3.message,stddev:message4.message}));
   }
 });
-// Example: http://localhost:8080/application/users_stated_gpa_average/?forThisUser=true
-// Example: http://localhost:8080/application/users_stated_gpa_average?major=Computer Science
-// Example: http://localhost:8080/application/users_stated_gpa_average?isDoubleMajor=true
-// Example: http://localhost:8080/application/users_stated_gpa_average?isTripleMajor=true
+// Example: http://localhost:3000/application/users_stated_gpa_average/?forThisUser=true
+// Example: http://localhost:3000/application/users_stated_gpa_average?major=Computer Science
+// Example: http://localhost:3000/application/users_stated_gpa_average?isDoubleMajor=true
+// Example: http://localhost:3000/application/users_stated_gpa_average?isTripleMajor=true
 router.get('/users_stated_gpa_average', async function(req, res) {
   let userid = req.session.userid;
   let forThisUser = req.query.forThisUser;
@@ -402,7 +402,7 @@ router.get('/users_stated_gpa_average', async function(req, res) {
 });
 
 // PUT
-// Example: http://localhost:8080/application/user?userid=39&password=passwerd&gpa=3.9&standing=Sophomore&majors=Computer Science&isvalidated=true&isadmin=true
+// Example: http://localhost:3000/application/user?userid=39&password=passwerd&gpa=3.9&standing=Sophomore&majors=Computer Science&isvalidated=true&isadmin=true
 router.put('/user', async function(req, res) { // use query parameters
   let userid = req.session.userid;
   let password = req.query.password;
@@ -419,7 +419,7 @@ router.put('/user', async function(req, res) { // use query parameters
     res.send(message);
   }
 });
-// Example: http://localhost:8080/application/take?courseid=6701&grade=3.2
+// Example: http://localhost:3000/application/take?courseid=6701&grade=3.2
 router.put('/take', async function(req, res) {
   // userid,courseid,grade
   let userid = req.session.userid;
@@ -433,7 +433,7 @@ router.put('/take', async function(req, res) {
     res.send(message);
   }
 });
-// Example: http://localhost:8080/application/password?password=p&newpassword=giancarlo esposito
+// Example: http://localhost:3000/application/password?password=p&newpassword=giancarlo esposito
 router.put('/password', async function(req, res) { 
   // (userid,password,newPassword)
   let userid = req.session.userid;
@@ -447,7 +447,7 @@ router.put('/password', async function(req, res) {
     res.send(message);
   }
 });
-// Example: http://localhost:8080/application/validate_user?validationcode=3429
+// Example: http://localhost:3000/application/validate_user?validationcode=3429
 router.put('/validate_user', async function(req, res) {
   let userid = req.session.userid;
   console.log("Suddenly: "+userid);
@@ -461,7 +461,7 @@ router.put('/validate_user', async function(req, res) {
 });
 
 // DELETE
-// Example: http://localhost:8080/application/take?courseid=6700
+// Example: http://localhost:3000/application/take?courseid=6700
 router.delete('/take', async function(req, res) {
   // userid,courseid
   let userid = req.session.userid;
