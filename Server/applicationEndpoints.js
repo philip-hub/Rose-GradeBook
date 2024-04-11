@@ -31,8 +31,10 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
           a. This way the whole thing can be reloaded in case of cursed table
           b. https://www.sqlshack.com/importexport-data-sql-server-using-sql-server-import-export-wizard/
           c. https://learn.microsoft.com/en-us/sql/integration-services/import-export-data/start-the-sql-server-import-and-export-wizard?view=sql-server-ver16
-      TODO Axe teacher comments, leave averages and course advice comments
-        // Link ratemyprof for any teacher-specific feedback ,be careful with the messaging
+      15. Launch Plan Google Doc: https://docs.google.com/document/d/11ojcI6Sl3bWT0f2RV24tC7eC0SETISwn_inaGdcXilM/edit?usp=sharing
+      16. Final Featureset
+        // Scrape RateMyProfessors and enter the data into here, and then provide a course view so people can see ratings by courses
+          // Advertise it as us already having done that work for you, and also that the idea is that people create threads after difficult tests etc and this allows them to help others
           // Put posters up[ with different quesions, followed by try our app today at with a qr code?
             // Questions: Answering the age old question of which major has it w\best (show overlapping n)
               // A place for students to anonymously place section-specific feedback all quarter long
