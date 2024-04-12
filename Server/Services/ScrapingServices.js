@@ -6,6 +6,7 @@ const { getDefaultAutoSelectFamilyAttemptTimeout } = require('net');
 const { DateTime } = require("luxon");
 var puppeteer = require('puppeteer');
 
+//#region Rose/Banner Scraping
 // Returns courses
 function course_factory (id, dept, name) {
     return {
@@ -389,6 +390,80 @@ async function writeMajors(majors) {
         }
     });
 }
+//#endregion
+
+/** toddoy */
+//#region Rate My Prof Scraping
+/** toddoy */
+async function getProfessors(department) {
+    // puppeteering
+    const browser = await puppeteer.launch({headless: "new"});
+    const page = await browser.newPage();
+    // Public course listing site
+    const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+    let content = await response.text();
+
+    // await page.screenshot({path: 'files/screenshot4.png'});
+    // console.log("Search results: "+ await page.$("#search-results").toString());
+    // await browser.close();
+    return content;
+}
+/** toddoy */
+function abbreviationToDeptName (abbrevation) {
+}
+/** toddoy */
+async function getRateMyProfLinks(profs) {
+    // puppeteering
+    const browser = await puppeteer.launch({headless: "new"});
+    const page = await browser.newPage();
+    // Public course listing site
+    const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+    let content = await response.text();
+
+    // await page.screenshot({path: 'files/screenshot4.png'});
+    // console.log("Search results: "+ await page.$("#search-results").toString());
+    // await browser.close();
+    return content;
+}
+/** toddoy */
+/**
+Review Schema: Quality, Difficulty, For Credit, Attendance, Would Take Again, 
+                  Grade, Textbook, SourceLink, Tags, Likes, Dislikes, Dates, Course, 
+                  Prof Name
+ */
+async function getReviews(rateMyProfLinks) {
+    // puppeteering
+    const browser = await puppeteer.launch({headless: "new"});
+    const page = await browser.newPage();
+    // Public course listing site
+    const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+    let content = await response.text();
+
+    // await page.screenshot({path: 'files/screenshot4.png'});
+    // console.log("Search results: "+ await page.$("#search-results").toString());
+    // await browser.close();
+    return content;
+}
+//#endregion
+
+//#region Helpers
+async function write(filename,data) {
+    let filepath = "data/";
+    data = {data};
+
+    // Lol it's like a demo of synchronous vs promises vs callbacks
+    let dir_exists = fs.existsSync(filepath);
+    if (!dir_exists) { // If the directory already exists
+        await fs.promises.mkdir(filepath,{ recursive: true });
+    }
+    fs.writeFile(filepath+filename+".json", JSON.stringify(data), function(err, buf ) {
+        if(err) {
+            console.log("error: ", err);
+        } else {
+            console.log("Data saved successfully!");
+        }
+    });
+}
 
 function curMonth(){
     return DateTime.now().month;
@@ -406,6 +481,7 @@ const waitSeconds = (n) => {
         }, n*1000);
     });
 }
+//#endregion
 
 exports.getCourses = getCourses;
 exports.bannerSiteUp = bannerSiteUp;
@@ -417,3 +493,6 @@ exports.getSections = getSections;
 exports.writeSections = writeSections;
 exports.getMajors = getMajors;
 exports.writeMajors = writeMajors;
+exports.getProfessors = getProfessors;
+exports.getRateMyProfLinks = getRateMyProfLinks;
+exports.getReviews = getReviews;

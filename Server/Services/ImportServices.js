@@ -4,16 +4,7 @@ var types = require('tedious').TYPES;
 const fs = require("fs");
 const { DateTime } = require("luxon");
 
-// Gets formatted date
-function formattedDate (daysAgo) {
-    let val = DateTime.now().minus({ days: daysAgo });
-    let toRet = val.year+"-"+val.month.toString().padStart(2,'0')+"-"+val.day.toString().padStart(2,'0');
-    return toRet;
-}
-function newYearDate (year) {
-  return year+"-06-06";
-}
-
+//#region Courses
 async function writeCourses (courses, sections, year) {
   const connection = await getNewConnection(true,true);
   let numRows = await bulkLoadCourses(courses, sections, year, connection); // it's okay if we don't await this because for inserts we just gotta run this in the background
@@ -102,7 +93,93 @@ function convertToCourseSchema(courses, sections, year) {
   }
   return toRet;
 }
+//#endregion
 
+//#region Comments
+/** toddoy */
+// This is the most difficult method in the whole process
+function convertReviewsToComments(reviews,department) {
+  // Iterate through each review and convert it
+}
+/** toddoy */
+/**
+ * Review Schema: (Quality, Difficulty, For Credit, Attendance, Would Take Again), 
+                  (Grade), (Textbook, SourceLink, Tags), (Likes, Dislikes), (Date), (Course), 
+                  (Prof Name)
+ * Goal Schema: @likes INT,@takeid INT,@commentdate DATE,@comment varchar(1000) <- Takes
+                  and @userid INT,@courseid INT,@grade float <- CourseComments
+    @likes INT
+      Likes-Dislikes
+    @takeid INT
+      Will be inserted
+        @userid INT
+          NULL, for now; idk how it should affect averages
+          // we can run updates for these takes later to give userid unique by dept, maybe using partition
+        @courseid INT
+          // will require a call to the match method using the review
+        @grade float
+          Grade
+    @commentdate DATE
+      Date
+    @comment varchar(1000)
+      Quality, Difficulty, For Credit, Attendance, Would Take Again
+      Textbook, SourceLink, Tags
+      
+ */
+function reviewToComment(review,department) {
+  
+}
+// Creates or gets section id from the available review data
+/** toddoy */
+/**
+  Use first other section that matches
+    Professor: (TODO, MODIFY ALL PROFS IMPORTED TO NOT HAVE NAME INCLUDE USERNAME)
+      Must like try and see if tsql supports the like command "[last], [first]" 
+    Year: 
+      Use a converter(subtract like a month and then put in buckets based on academic calendar)
+    Quarter: 
+      Same converter should return year and quarter
+    CourseDeptAndNumber: 
+      Must match (maybe in the future we make it smart enough to get old aliases)
+    Section: RMP01
+  If there isn’t one, them ignore the course and write its name to a text file so I can log it
+  Insert a new section if you can’t find one
+    Find a course wityh samme coursenamendnumber
+      If there isn't one, then ignore the course and write it’s name to a text file so I can log it    
+      If there is one
+      Name: course
+      Dept: course
+      Credits: course
+      Professor: Review
+      Number: course
+      Year: Review
+      Quarter: course
+      CourseDeptAndNumber: course
+      Section: RMP01
+ */
+async function getSectionID(review,department) {
+// 
+}
+/** toddoy */
+// Pretty straightforward, clone of old functionality
+function writeComments(comments) {
+
+}
+//#endregion
+
+//#region Helpers
+// Gets formatted date
+function formattedDate (daysAgo) {
+  let val = DateTime.now().minus({ days: daysAgo });
+  let toRet = val.year+"-"+val.month.toString().padStart(2,'0')+"-"+val.day.toString().padStart(2,'0');
+  return toRet;
+}
+function newYearDate (year) {
+return year+"-06-06";
+}
+//#endregion
+
+//#region Connectivity
 async function getNewConnection(rowCollectionOnRequestCompletion,rowCollectionOnDone) {
   var config = JSON.parse(fs.readFileSync("./connectivity_config.json"));
   config.options.rowCollectionOnRequestCompletion = rowCollectionOnRequestCompletion;
@@ -125,5 +202,8 @@ const connectPromise = (connection) => {
       });
   });
 }
+//#endregion
 
 exports.writeCourses = writeCourses;
+exports.convertReviewsToComments = convertReviewsToComments;
+exports.writeComments = writeComments;

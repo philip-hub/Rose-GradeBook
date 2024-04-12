@@ -544,7 +544,6 @@ async function validateCourseID (courseid) {
 
 //#region Course Comments
 
-// todo
 // Yeahh, so imma do this so it doesn't get too spicy: https://www.npmjs.com/package/obscenity
 async function createCourseComment (userid,courseid,comment,overwrite) { // returns user id for session
     if (!userid) {
@@ -590,7 +589,6 @@ async function createCourseComment (userid,courseid,comment,overwrite) { // retu
     return generateMessage(retval==0,retval==0?"Successfully added/updated commenting on a course!":"Error message; todo, implement varied error messages based on the return value: "+retval);
 }
 
-// TODO
 async function readCourseComments (page, courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
     let message = await validateCourseID(courseid);
     if (!message.success) {
@@ -1503,6 +1501,11 @@ exports.readTakes = readTakes;
 exports.updateTake = updateTake;
 exports.deleteTake = deleteTake;
 exports.numTakes = numTakes;
+
+exports.createCourseComment = createCourseComment;
+exports.readCourseComments = readCourseComments;
+exports.updateCourseComment = updateCourseComment;
+exports.deleteCourseComment = deleteCourseComment;
 
 exports.readCourses = readCourses;
 exports.readCoursesPagination = readCoursesPagination;

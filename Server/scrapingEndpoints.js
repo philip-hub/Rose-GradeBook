@@ -12,7 +12,7 @@ var ScrapingServices = require('./Services/ScrapingServices.js');
 // Overview
   // This API will allow for the maintenance and use of a webscraper for Rose-Hulman's publicly available course offerings as well as specific sections for user's with credentials
 
-// Update
+// Create/Update
 // Write all courses from public site into 20XX_courseinfo.json. Year specified is the later of xxxx-yyyy, aka the year the class of yyyy graduates
 router.post('/courses/:year',async function(req,res) {
     let curYear = ScrapingServices.thisYear();
@@ -64,5 +64,57 @@ router.post('/majors',async function(req,res) {
     await ScrapingServices.writeMajors(majors);    
     res.end();
 });
+
+// Rate My Professor scraping steps
+// 1. Get professors
+/** toddoy */
+// LINKS: https://www.rose-hulman.edu/academics/faculty/index.html
+    // Looks doable, but a mapping will ne
+router.post('/all_rose_profs',async function(req,res) {
+    let department = req.params.department;
+    let profs = await ScrapingServices.getProfessors(department);
+    await ScrapingServices.write("profs",profs);    
+    res.end();
+});
+// 2. Get all the links most likely to correspond to them
+/** toddoy */
+// LINKS: https://www.google.com/search?q=google+search+with+puppeteer&oq=google+search+with+puppeteer&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhA0gEINDI1OGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
+    // https://stackoverflow.com/questions/67515088/scraping-google-search-result-links-with-puppeteer
+    // https://hackernoon.com/scraping-google-search-results-with-node-js
+router.post('/rate_my_prof_links/:department',async function(req,res) {
+    let department = req.params.department;
+    let path = "data/"+department+"_profs.json";
+    let dirs_exists = fs.existsSync(path);
+    if (!dirs_exists) {
+        res.send("Haven't gotten professors for this department yet");
+    }
+    let profs = await fs.promises.readFile(path);
+
+    let rateMyProfLinks = await ScrapingServices.getRateMyProfLinks(profs,department);
+    let toWrite = {};
+    toWrite[department] = rateMyProfLinks;
+    await ScrapingServices.write(department+"_rate_my_prof_links",toWrite);    
+    res.end();
+});
+//3. Hand-verify that these are the links, and try to find the real ones if possible
+//4. Go through the links and get all the reviews in a json
+/** toddoy */
+// Dropwdown for courselist if that's helpful, hit loadmoreuntil it's gone, nothing really fancy else
+router.post('/scrape_reviews/:department',async function(req,res) {
+    let department = req.params.department;
+    let path = "data/"+department+"_rate_my_prof_links.json";
+    let dirs_exists = fs.existsSync(path);
+    if (!dirs_exists) {
+        res.send("Haven't gotten Rate My Prof links for this department yet");
+    }
+    let rateMyProfLinks = await fs.promises.readFile(path);
+    
+    let reviews = await ScrapingServices.getReviews(rateMyProfLinks);
+    let toWrite = {};
+    toWrite[department] = reviews;
+    await ScrapingServices.write(department+"_reviewinfo",toWrite);
+    res.end();
+});
+
 
 module.exports = router;
