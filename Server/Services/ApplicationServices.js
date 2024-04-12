@@ -13,6 +13,18 @@ var types = require('tedious').TYPES;
 const { DateTime } = require("luxon");
 var nodemailer = require('nodemailer');
 
+const {
+	RegExpMatcher,
+	TextCensor,
+	englishDataset,
+	englishRecommendedTransformers,
+} = require('obscenity');
+const matcher = new RegExpMatcher({
+	...englishDataset.build(),
+	...englishRecommendedTransformers,
+});
+const censor = new TextCensor();
+
 let pageSize = 20;
 
 //#region CRUD
@@ -240,6 +252,36 @@ async function readTakes (userid) {
     return generateMessage(true,toRet);
 }
 
+async function readTakeID (userid,courseid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!",99);
+    }
+    let message = await validateTakeID(userid,courseid);
+    if (!message.success) {
+        return generateMessage(false,"You aren't taking this course yet!",33);
+    }
+    let toRet = [];
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select TakesID from Takes where UserID = @userid AND CourseID=@courseid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid);
+    request.addParameter('courseid', types.Int, courseid);
+
+    connection.execSql(request);
+
+    let rows1 = await execSqlRequestDonePromise (request);
+    let takeID = rows1[0][0].value; // first (and only) row, first (and only) column
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(true,takeID);
+}
+
 // 3a. Update grade for specific take (user-specific)
 // Why can't it they just be a SQL insert? Gotta be smart enough to just do nothing if already in or if the user has already taken this course; what if retake? this isn't used in gpa calc, but in the course calc
 
@@ -301,6 +343,31 @@ async function numTakes () {
     return generateMessage(true,numTakes);
 
 }
+
+async function validateTakeID (userid,courseid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!",99);
+    }
+
+    const connection = await getNewConnection(false,true);
+    let sql = 'select COUNT(*) from Takes where UserID=@userid and CourseID=@courseid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('userid', types.Int, userid); 
+    request.addParameter('courseid', types.Int, courseid); 
+    connection.execSql(request);
+    let rows1 = await execSqlRequestDonePromise (request);
+    let numResults = rows1[0][0].value; // first (and only) row, first (and only) column
+    
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(!courseid || numResults == 1,(!courseid || numResults == 1)?"Successfully validated take!":"Error message; todo, implement varied error messages based on the return value");
+}
+
 
 //#endregion
 
@@ -472,6 +539,194 @@ async function validateCourseID (courseid) {
         // So if we await that then we're good on everything in the thens
     return generateMessage(!courseid || numCourses == 1,(!courseid || numCourses == 1)?"Successfully validated course!":"Error message; todo, implement varied error messages based on the return value");
 }
+
+//#endregion
+
+//#region Course Comments
+
+// todo
+// Yeahh, so imma do this so it doesn't get too spicy: https://www.npmjs.com/package/obscenity
+async function createCourseComment (userid,courseid,comment,overwrite) { // returns user id for session
+    if (!userid) {
+        return generateMessage(false,"Not logged in!",99);
+    }
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+    let message2 = await readTakeID(userid,courseid);
+    if (!message2.success) {
+        return message2;
+    }
+
+    let connection = await getNewConnection(false,false);
+
+    const request = new RequestM('insertUpdateComment', (err, rowCount) => {
+        if (err) { 
+            return generateMessage(false,err);
+        }
+        connection.close();
+    });
+    let takeid = message2.message;
+    const matches = matcher.getAllMatches(comment);
+    let cleancomment = censor.applyTo(comment, matches);
+    request.addParameter('likes', types.Int, 0);
+    request.addParameter('takeid', types.Int, takeid);
+    request.addParameter('commentdate', types.Date, todayDate());
+    request.addParameter('comment', types.VarChar, cleancomment);
+    request.addParameter('overwrite', types.Bit, booleanToBit(overwrite));
+
+    // In SQL Server 2000 you may need: connection.execSqlBatch(request);
+    connection.callProcedure(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+
+    let retval = await callProcedureRequestFinalReturnPromise (request);
+    if(retval == 1) {
+        return generateMessage(false,"Are you sure you want to overwrite your previous review?",55);
+    }
+    return generateMessage(retval==0,retval==0?"Successfully added/updated commenting on a course!":"Error message; todo, implement varied error messages based on the return value: "+retval);
+}
+
+// TODO
+async function readCourseComments (page, courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
+    let toRet = [];
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select * from Courses c JOIN Takes t on c.courseid = t.courseid JOIN CourseComments cc on cc.takeid = t.takeid where 0=0';
+    if (courseid) { sql += " and c.CourseID=@courseid" }
+    if (name) { sql += " and c.Name=@name" }
+    if (department) { sql += " and c.Dept=@department" }
+    if (credits) { sql += " and c.Credits=@credits" }
+    if (professor) { sql += " and c.Professor=@professor" }
+    if (year) { sql += " and c.Year=@year" }
+    if (quarter) { sql += " and c.Quarter=@quarter" }
+    if (coursedeptandnumber) { sql += " and c.CourseDeptAndNumber=@coursedeptandnumber" }
+    sql += ` ORDER BY cc.CommentDate OFFSET (${page-1})*${pageSize} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (name) { request.addParameter('name', types.VarChar, name); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
+
+    connection.execSql(request);
+
+    let rows2 = await execSqlRequestDonePromise (request);
+    rows2.forEach((columns) => {
+        let toPush = 
+        convertFromCourseCommentSchema(columns);
+        toRet.push(toPush);
+    });
+
+    let message2 = await numCommentsPages(courseid, name, department, credits, professor, year, quarter, coursedeptandnumber);
+    if (message2.success) {
+        let numPages = message2.message;
+        return generateMessage(true,{numPages:numPages,data:toRet});
+    } else {
+        return message2;
+    }
+}
+
+async function updateCourseComment (userid,courseid,comment,overwrite) {
+// @userid INT,@courseid INT,@grade Float
+    return await createCourseComment(userid,courseid,comment,overwrite);
+}
+
+async function deleteCourseComment(userid,courseid) {
+    if (!userid) {
+        return generateMessage(false,"Not logged in!",99);
+    }
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+    let message2 = await readTakeID(userid,courseid);
+    if (!message2.success) {
+        return message2;
+    }
+
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'delete from CourseComments where takeid = @takeid';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    request.addParameter('takeid', types.Int, takeid);
+
+    connection.execSql(request);
+
+    request.on('error', function (err) {
+        return generateMessage(false,err);
+    });
+    let rows1 = await execSqlRequestDonePromise(request);
+    
+    return generateMessage(true,"Successfully deleted a course comment!");
+}
+
+async function numCommentsPages(courseid, name, department, credits, professor, year, quarter, coursedeptandnumber) {
+    let message = await validateCourseID(courseid);
+    if (!message.success) {
+        return generateMessage(false,"Invalid course id provided!");
+    }
+
+    const connection = await getNewConnection(false,true);
+
+    let sql = 'select COUNT(*) from Courses c JOIN Takes t on c.courseid = t.courseid JOIN CourseComments cc on cc.takeid = t.takeid where 0=0';
+    if (courseid) { sql += " and c.CourseID=@courseid" }
+    if (name) { sql += " and c.Name=@name" }
+    if (department) { sql += " and c.Dept=@department" }
+    if (credits) { sql += " and c.Credits=@credits" }
+    if (professor) { sql += " and c.Professor=@professor" }
+    if (year) { sql += " and c.Year=@year" }
+    if (quarter) { sql += " and c.Quarter=@quarter" }
+    if (coursedeptandnumber) { sql += " and c.CourseDeptAndNumber=@coursedeptandnumber" }
+    sql += ` ORDER BY cc.CommentDate OFFSET (${page-1})*${pageSize} ROWS FETCH NEXT ${pageSize} ROWS ONLY`;
+
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return generateMessage(false,err);
+        }
+    });
+
+    if (courseid) { request.addParameter('courseid', types.Int, courseid); }
+    if (name) { request.addParameter('name', types.VarChar, name); }
+    if (department) { request.addParameter('department', types.VarChar, department); }
+    if (credits) { request.addParameter('credits', types.Float, credits); }
+    if (professor) { request.addParameter('professor', types.VarChar, professor); }
+    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
+    if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
+
+
+    connection.execSql(request);
+    let rows1 = await execSqlRequestDonePromise (request);
+    let numCourses = rows1[0][0].value; // first (and only) row, first (and only) column
+    
+    // Here's the magic: the then() function returns a new promise, different from the original:
+        // So if we await that then we're good on everything in the thens
+    return generateMessage(true,Math.ceil(numCourses/pageSize));
+}
+
 
 //#endregion
 
@@ -1079,6 +1334,10 @@ function newYearDate (year) {
     return year+"-06-06";
 }  
 
+function todayDate () {
+    return DateTime.now().toFormat('yyyy-MM-dd')	;
+}
+
 const waitSeconds = (n) => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
@@ -1199,6 +1458,38 @@ function convertFromTakeSchema(row) {
             // the front end should also recoil in horror, separately
                 // There should be a strikethrough /graying out of any non-veg in reqs or general list
     return {userid:userid,grade:grade,course:convertFromCourseSchema(row)};
+}
+
+function convertFromCourseCommentSchema(row) {
+    let coursecommentid = 0;
+    let likes = 0;
+    let comment = "";
+    let takeid = 0;
+    let commentdate = "";
+
+    row.forEach((column) => {
+            let colName = column.metadata.colName;
+            switch (colName) {
+                case 'CourseCommentID':
+                    coursecommentid = column.value;
+                    break;
+                case 'Likes':
+                    likes = column.value;
+                    break;
+                case 'TakeID':
+                    takeid = column.value;
+                    break;
+                case 'CommentDate':
+                    commentdate = column.value;
+                    break;
+                case 'Comment':
+                    comment = column.value;
+                    break;
+                default:
+                //   console.log(`New column name?!: ${colName}`);
+              }
+        });
+    return {coursecommentid:coursecommentid,likes:likes,comment:comment,takeid:takeid,commentdate:commentdate};
 }
 //#endregion
 

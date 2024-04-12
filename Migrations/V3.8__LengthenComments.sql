@@ -1,0 +1,5 @@
+ALTER TABLE CourseComments
+DROP COLUMN Comment;
+
+ALTER TABLE CourseComments
+ADD Comment VARCHAR(1000) NULL

@@ -1,0 +1,2 @@
+ALTER TABLE CourseComments
+DROP CONSTRAINT Positive_Likes
