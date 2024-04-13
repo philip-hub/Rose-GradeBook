@@ -5,6 +5,7 @@ const { get } = require('http');
 const { getDefaultAutoSelectFamilyAttemptTimeout } = require('net');
 const { DateTime } = require("luxon");
 var puppeteer = require('puppeteer');
+const { all } = require('../applicationEndpoints');
 
 //#region Rose/Banner Scraping
 // Returns courses
@@ -394,36 +395,34 @@ async function writeMajors(majors) {
 
 /** toddoy */
 //#region Rate My Prof Scraping
-/** toddoy */
-async function getProfessors(department) {
-    // puppeteering
-    const browser = await puppeteer.launch({headless: "new"});
-    const page = await browser.newPage();
-    // Public course listing site
-    const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
-    let content = await response.text();
+const roseRateMyProfSite = "https://www.ratemyprofessors.com/search/professors/820";
 
-    // await page.screenshot({path: 'files/screenshot4.png'});
-    // console.log("Search results: "+ await page.$("#search-results").toString());
-    // await browser.close();
-    return content;
-}
-/** toddoy */
-function abbreviationToDeptName (abbrevation) {
-}
 /** toddoy */
 async function getRateMyProfLinks(profs) {
     // puppeteering
-    const browser = await puppeteer.launch({headless: "new"});
+    // const browser = await puppeteer.launch({headless: "new"});
+    const browser = await puppeteer.launch({
+        headless: false,
+      });
     const page = await browser.newPage();
     // Public course listing site
-    const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
-    let content = await response.text();
+    const response = await page.goto(roseRateMyProfSite, { timeout: 300000, waitUntil:"networkidle2" } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+    // let content = await response.text();
 
     // await page.screenshot({path: 'files/screenshot4.png'});
     // console.log("Search results: "+ await page.$("#search-results").toString());
     // await browser.close();
-    return content;
+    
+    let showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1"); // document.querySelectorAll(".Buttons__Button-sc-19xdot-1");
+    while (showMoreButton) {
+        console.log("Numprofs: "+(await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx")).length);
+        await page.click(".Buttons__Button-sc-19xdot-1", {delay: 500});
+        showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1");
+    }
+    const allTeachers = await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx");
+    console.log(allTeachers.length); // .Buttons__Button-sc-19xdot-1
+    // await waitSeconds(10);
+    return allTeachers;
 }
 /** toddoy */
 /**
@@ -493,6 +492,6 @@ exports.getSections = getSections;
 exports.writeSections = writeSections;
 exports.getMajors = getMajors;
 exports.writeMajors = writeMajors;
-exports.getProfessors = getProfessors;
 exports.getRateMyProfLinks = getRateMyProfLinks;
 exports.getReviews = getReviews;
+exports.write = write;

@@ -126,7 +126,7 @@ function convertReviewsToComments(reviews,department) {
       Textbook, SourceLink, Tags
       
  */
-function reviewToComment(review,department) {
+function reviewToCommentSectionsTakes(review,department) {
   
 }
 // Creates or gets section id from the available review data
@@ -143,8 +143,18 @@ function reviewToComment(review,department) {
       Must match (maybe in the future we make it smart enough to get old aliases)
     Section: RMP01
   If there isn’t one, them ignore the course and write its name to a text file so I can log it
+    create a course with this name
+      Name: coursedeptandnumber
+      Dept: must be an existing - derived from coursedeptandnumber prefix
+      Credits: 4
+      Professor: Review
+      Number: review
+      Year: Review
+      Quarter: review
+      CourseDeptAndNumber: review
+      Section: RMP01
   Insert a new section if you can’t find one
-    Find a course wityh samme coursenamendnumber
+    Find a course wityh samme coursenamendnumber (not dept, that is given by course)
       If there isn't one, then ignore the course and write it’s name to a text file so I can log it    
       If there is one
       Name: course
@@ -152,10 +162,11 @@ function reviewToComment(review,department) {
       Credits: course
       Professor: Review
       Number: course
-      Year: Review
-      Quarter: course
+      Year: course/review
+      Quarter: course/review
       CourseDeptAndNumber: course
       Section: RMP01
+    Log any failures
  */
 async function getSectionID(review,department) {
 // 
