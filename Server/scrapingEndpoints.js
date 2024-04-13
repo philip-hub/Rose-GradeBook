@@ -72,6 +72,13 @@ router.post('/majors',async function(req,res) {
     // https://www.google.com/search?q=google+search+with+puppeteer&oq=google+search+with+puppeteer&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhA0gEINDI1OGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
     // https://stackoverflow.com/questions/67515088/scraping-google-search-result-links-with-puppeteer
     // https://hackernoon.com/scraping-google-search-results-with-node-js
+// NOTE: This process is incredibly finicky; there are multiple servers that contain varying numbers of professors at this url that you can be pointed to; try a couple times and get the one with the highest number
+        // You often have to do a click or two at the beginning I'm assuming to get around bot detection
+    // Even within the same server, there can be varying numbers of results, almost always less than the claimed number of professors
+    // Some of the links obtained may be from professors of other schools, so review scraping should verify that the professor still teaches at rose
+    // For best results, use the departments dropdown and scrape by department, still inconsistent and weird tho
+        // Scraping by the All option 285 is the record amount I was able to scrape, 200 being the lowest and 293 occurring only when I manually clicked through it
+    // It's whatever
 router.post('/rate_my_prof_links',async function(req,res) {
     let rateMyProfLinks = await ScrapingServices.getRateMyProfLinks();
     await ScrapingServices.write("rate_my_prof_links",rateMyProfLinks);    

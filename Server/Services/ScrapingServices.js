@@ -406,23 +406,41 @@ async function getRateMyProfLinks(profs) {
       });
     const page = await browser.newPage();
     // Public course listing site
-    const response = await page.goto(roseRateMyProfSite, { timeout: 300000, waitUntil:"networkidle2" } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+    const response = await page.goto(roseRateMyProfSite, { timeout: 0, waitUntil:"networkidle2" } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
     // let content = await response.text();
-
+    await waitSeconds(5); // Time in which to select the department
     // await page.screenshot({path: 'files/screenshot4.png'});
     // console.log("Search results: "+ await page.$("#search-results").toString());
     // await browser.close();
-    
-    let showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1"); // document.querySelectorAll(".Buttons__Button-sc-19xdot-1");
-    while (showMoreButton) {
-        console.log("Numprofs: "+(await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx")).length);
-        await page.click(".Buttons__Button-sc-19xdot-1", {delay: 500});
+    let showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1"); // document.querySelectorAll(".Buttons__Button-sc-19xdot-1")
+    let i = 0;
+    let allTeachers = [];
+    while (showMoreButton) { // looks llike it can get stuck and need a manual click every once in a while
+        allTeachers = (await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx"));
+        console.log("NumallTeachers: "+i);i++;
+        try {
+        await page.click(".Buttons__Button-sc-19xdot-1", {delay: 1000});
+        } catch {
+            // await waitSeconds(1);
+            // continue;
+            break;
+        }
         showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1");
     }
-    const allTeachers = await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx");
-    console.log(allTeachers.length); // .Buttons__Button-sc-19xdot-1
-    // await waitSeconds(10);
-    return allTeachers;
+    allTeachers = (await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx"));
+    return await getNamesAndLinks(allTeachers);
+}
+/** toddoy */
+async function getNamesAndLinks(allTeachers) {
+    let toRet = [];
+
+    for (let i = 0; i < allTeachers.length; i++) { // skip that first row since it just has col names
+        // await( await option.getProperty('iallTeacherserText') ).jsonValue();
+        const teacher = allTeachers[i];
+        const val = await( await teacher.getProperty('href') ).jsonValue();
+        toRet.push(val);
+    }
+    return toRet;
 }
 /** toddoy */
 /**
