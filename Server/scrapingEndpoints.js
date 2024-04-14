@@ -67,7 +67,7 @@ router.post('/majors',async function(req,res) {
 
 // Rate My Professor scraping steps
 // 1. Get all the links most likely to correspond to them
-/** toddoy */
+/** toddoy: Make a version of this that automatically goes through all dropdowns and do this before closing the browser; more efficient*/
 // LINKS: https://www.ratemyprofessors.com/search/professors/820
     // https://www.google.com/search?q=google+search+with+puppeteer&oq=google+search+with+puppeteer&gs_lcrp=EgZjaHJvbWUyBggAEEUYOTIGCAEQRRhA0gEINDI1OGowajGoAgCwAgA&sourceid=chrome&ie=UTF-8
     // https://stackoverflow.com/questions/67515088/scraping-google-search-result-links-with-puppeteer
@@ -87,16 +87,18 @@ router.post('/rate_my_prof_links',async function(req,res) {
 // 2. Go through the links and get all the reviews in a json
 /** toddoy */
 // Dropwdown for courselist if that's helpful, hit loadmoreuntil it's gone, nothing really fancy else
-router.post('/rate_my_prof_reviews',async function(req,res) {
-    let path = "data/rate_my_prof_links.json";
+// depnum - a department number, 1-15 (or whatever you want for new links you want to add) based on the dropdown for the departments scraped
+    // Reads file "data/rate_my_prof_links_"+depnum+".json"
+router.post('/rate_my_prof_reviews/:depnum',async function(req,res) {
+    let depnum = req.params.depnum;
+    let path = "data/rate_my_prof_links_"+depnum+".json";
     let dirs_exists = fs.existsSync(path);
     if (!dirs_exists) {
         res.send("Haven't gotten Rate My Prof links for this department yet");
     }
     let rateMyProfLinks = await fs.promises.readFile(path);
-    
-    let reviews = await ScrapingServices.getReviews(rateMyProfLinks);
-    await ScrapingServices.write("reviewinfo",reviews);
+    let reviews = await ScrapingServices.getReviews(JSON.parse(rateMyProfLinks).data);
+    await ScrapingServices.write("reviewinfo_"+depnum,reviews);
     res.end();
 });
 

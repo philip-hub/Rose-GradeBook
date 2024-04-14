@@ -6,6 +6,7 @@ const { getDefaultAutoSelectFamilyAttemptTimeout } = require('net');
 const { DateTime } = require("luxon");
 var puppeteer = require('puppeteer');
 const { all } = require('../applicationEndpoints');
+var async = require('async');
 
 //#region Rose/Banner Scraping
 // Returns courses
@@ -412,22 +413,25 @@ async function getRateMyProfLinks(profs) {
     // await page.screenshot({path: 'files/screenshot4.png'});
     // console.log("Search results: "+ await page.$("#search-results").toString());
     // await browser.close();
-    let showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1"); // document.querySelectorAll(".Buttons__Button-sc-19xdot-1")
+    let showMoreSelector = ".Buttons__Button-sc-19xdot-1";
+    let showMoreButton = await page.$(showMoreSelector); // document.querySelectorAll(".Buttons__Button-sc-19xdot-1")
     let i = 0;
     let allTeachers = [];
     while (showMoreButton) { // looks llike it can get stuck and need a manual click every once in a while
-        allTeachers = (await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx"));
+        // allTeachers = (await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx"));
         console.log("NumallTeachers: "+i);i++;
         try {
-        await page.click(".Buttons__Button-sc-19xdot-1", {delay: 1000});
+        await page.click(showMoreSelector, {delay: 1000});
         } catch {
-            // await waitSeconds(1);
+            await waitSeconds(5);
             // continue;
+            console.log("Failed to click!");
             break;
         }
-        showMoreButton = await page.$(".Buttons__Button-sc-19xdot-1");
+        // showMoreButton = await page.$(showMoreSelector);
     }
-    allTeachers = (await page.$$("a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx"));
+    let allTeachersSelector = "a.TeacherCard__StyledTeacherCard-syjs0d-0.dLJIlx";
+    allTeachers = (await page.$$(allTeachersSelector));
     return await getNamesAndLinks(allTeachers);
 }
 /** toddoy */
@@ -444,25 +448,126 @@ async function getNamesAndLinks(allTeachers) {
 }
 /** toddoy */
 /**
-Review Schema: Quality, Difficulty, For Credit, Attendance, Would Take Again, 
-                  Grade, Textbook, SourceLink, Tags, Likes, Dislikes, Dates, Course, 
-                  Prof Name
+ * Course baseline selector: div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb
+ * 
+Review Schema: 
+SourceLink
+- Write that directly
+    Review
+        Comment
+        - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[2].innerText
+        Quality/Difficulty
+        - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[1].innerText
+        - Newline delimited
+        For Credit/Attendance/Would Take Again/Textbook (these can be lumped together so use innerText to do that automatically)
+        - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[1].innerText
+            - Find the line that's grade and take it and the one after out, leave the rest
+        Grade
+        - The two elements that were taken out
+        Tags
+        - "Tags: document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[3].innerText"
+            - Make sure that the length is 5 not 4 first: document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[22].children[2].children.length
+        Likes/Dislikes
+        - document.querySelectorAll("div.Thumbs__HelpTotalNumber-sc-19shlav-2.lihvHt")
+          - This one is every other one is like and dislike so don't forget to multiply by 2
+        Dates
+        - document.querySelectorAll("div.TimeStamp__StyledTimeStamp-sc-9q2r30-0.bXQmMr.RatingHeader__RatingTimeStamp-sc-1dlkqw1-4.iwwYJD")[0].innerText
+        Course
+        - document.querySelectorAll(".RatingHeader__StyledClass-sc-1dlkqw1-3.eXfReS")[0].innerText
+        - Every other one; make sure to eliminate whitespace
+        Prof Name
+        - First: document.querySelectorAll(".NameTitle__Name-dowf0z-0.cfjPUG > span")[0].innerText
+        - Last: document.querySelectorAll(".NameTitle__Name-dowf0z-0.cfjPUG > span")[1].innerText
  */
+
+// This one gets back to a quintessential question: https://stackoverflow.com/questions/40328932/javascript-es6-promise-for-loop
+    // How do you sequentially run promises in a for loop?
 async function getReviews(rateMyProfLinks) {
-    // puppeteering
-    const browser = await puppeteer.launch({headless: "new"});
-    const page = await browser.newPage();
-    // Public course listing site
-    const response = await page.goto(publicSite("current"), { timeout: 30000 } ); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
-    let content = await response.text();
+    const browser = await puppeteer.launch({headless: false//"new"
+    });
 
-    // await page.screenshot({path: 'files/screenshot4.png'});
-    // console.log("Search results: "+ await page.$("#search-results").toString());
-    // await browser.close();
-    return content;
+    // getReviewsSinglePage(rateMyProfLink,browser)
+        // Needs to be called sequentially
+        // https://stackoverflow.com/questions/15969082/node-js-async-series-is-that-how-it-is-supposed-to-work
+    let arr = [];
+        for (let i = 0; i < rateMyProfLinks.length; i++) {
+            arr.push(getReviewsSinglePage(rateMyProfLinks,browser));
+    }
+    let toRet = await sequentiallyEvaluatePromises(arr);
+    await browser.close();
+    return toRet;
 }
-//#endregion
 
+/** toddoy */
+async function getReviewsSinglePage(rateMyProfLink,browser) {
+    let toRet = [];    
+    console.log(rateMyProfLink+" started!");
+
+            // puppeteering
+            const page = await browser.newPage();
+            const response = await page.goto(rateMyProfLink, { timeout: 0, waitUntil: "networkidle2"}); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+            // Load all reviews
+            let showMoreSelector = ".Buttons__Button-sc-19xdot-1.PaginationButton__StyledPaginationButton-txi1dr-1.eUNaBX";
+            let showMoreButton = await page.$(showMoreSelector); // document.querySelector(".Buttons__Button-sc-19xdot-1.PaginationButton__StyledPaginationButton-txi1dr-1.eUNaBX")
+            let i = 0;
+            while (showMoreButton) {
+                console.log(rateMyProfLink+" NumallReviews: "+i);i++;
+                try {
+                    await page.click(showMoreSelector, {delay: 2500});
+                } catch {
+                    await waitSeconds(5);
+                    // continue;
+                    console.log("Failed to click!");
+                    break;
+                }
+            }
+            console.log("Finished ");
+            let reviewSelector = 'div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb';
+            let numReviews =  await page.evaluate(() => { return (Array.from(document.querySelector(reviewSelector).children).length); });
+            let allReviews = await page.$$(reviewSelector);
+            console.log(numReviews);
+            for (let i = 0; i < numReviews; i++) {
+                const reviewChildren = await( await allReviews[i].getProperty('children') );
+                const reviewChild2Children = await( await reviewChildren[2].getProperty('children') );
+                // .children[2].children[2].innerText
+                const comment = await( await reviewChild2Children[2].getProperty('innerText') ).jsonValue();
+                toRet.push({comment:comment})
+    /**
+     *         Comment
+            - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[2].innerText
+            Quality/Difficulty
+            - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[1].innerText
+            - Newline delimited
+            For Credit/Attendance/Would Take Again/Textbook (these can be lumped together so use innerText to do that automatically)
+            - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[1].innerText
+                - Find the line that's grade and take it and the one after out, leave the rest
+            Grade
+            - The two elements that were taken out
+            Tags
+            - "Tags: document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[3].innerText"
+                - Make sure that the length is 5 not 4 first: document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[22].children[2].children.length
+            Likes/Dislikes
+            - document.querySelectorAll("div.Thumbs__HelpTotalNumber-sc-19shlav-2.lihvHt")
+              - This one is every other one is like and dislike so don't forget to multiply by 2
+            Dates
+            - document.querySelectorAll("div.TimeStamp__StyledTimeStamp-sc-9q2r30-0.bXQmMr.RatingHeader__RatingTimeStamp-sc-1dlkqw1-4.iwwYJD")[0].innerText
+            Course
+            - document.querySelectorAll(".RatingHeader__StyledClass-sc-1dlkqw1-3.eXfReS")[0].innerText
+            - Every other one; make sure to eliminate whitespace
+            Prof Name
+            - First: document.querySelectorAll(".NameTitle__Name-dowf0z-0.cfjPUG > span")[0].innerText
+            - Last: document.querySelectorAll(".NameTitle__Name-dowf0z-0.cfjPUG > span")[1].innerText
+    
+     */
+            
+    
+            // await page.screenshot({path: 'files/screenshot4.png'});
+            // console.log("Search results: "+ await page.$("#search-results").toString());
+            }
+        return toRet;
+    
+}
+    //#endregion
 //#region Helpers
 async function write(filename,data) {
     let filepath = "data/";
@@ -493,11 +598,25 @@ function thisYear(){
 const waitSeconds = (n) => {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            console.log("5 seconds passed");
+            console.log(n+" seconds passed");
             resolve("Finished waiting!");
         }, n*1000);
     });
 }
+
+const sequentiallyEvaluatePromises = (promiseArr) => {
+    return new Promise((resolve, reject) => {
+        
+        async.series(
+            promiseArr
+        , function (err, results) {
+            // Here, results is an array of the value from each function
+            resolve(results); // outputs: ['two', 'five']
+        });
+    });
+}
+
+
 //#endregion
 
 exports.getCourses = getCourses;
