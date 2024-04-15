@@ -6,7 +6,6 @@ const { getDefaultAutoSelectFamilyAttemptTimeout } = require('net');
 const { DateTime } = require("luxon");
 var puppeteer = require('puppeteer');
 const { all } = require('../applicationEndpoints');
-var async = require('async');
 
 //#region Rose/Banner Scraping
 // Returns courses
@@ -483,87 +482,173 @@ SourceLink
 // This one gets back to a quintessential question: https://stackoverflow.com/questions/40328932/javascript-es6-promise-for-loop
     // How do you sequentially run promises in a for loop?
 async function getReviews(rateMyProfLinks) {
-    const browser = await puppeteer.launch({headless: false//"new"
-    });
+    const browser = await puppeteer.launch({headless: "new"//false
+});
 
-    // getReviewsSinglePage(rateMyProfLink,browser)
-        // Needs to be called sequentially
-        // https://stackoverflow.com/questions/15969082/node-js-async-series-is-that-how-it-is-supposed-to-work
-    let arr = [];
-        for (let i = 0; i < rateMyProfLinks.length; i++) {
-            arr.push(getReviewsSinglePage(rateMyProfLinks,browser));
+
+
+    let toRet = {};
+    for (let i = 0; i < rateMyProfLinks.length; i++) {
+        let rateMyProfLink = rateMyProfLinks[i];
+        if (!toRet[rateMyProfLink]) { // only scrapes for new ones
+            try {
+                toRet[rateMyProfLink] = await getReviewsSinglePage(rateMyProfLink,browser);
+            } catch(err) {
+                toRet[rateMyProfLink] = err;
+            }
+        } 
     }
-    let toRet = await sequentiallyEvaluatePromises(arr);
-    await browser.close();
+    // await browser.close();
     return toRet;
 }
-
 /** toddoy */
 async function getReviewsSinglePage(rateMyProfLink,browser) {
     let toRet = [];    
     console.log(rateMyProfLink+" started!");
-
+// await waitSeconds(5);
             // puppeteering
             const page = await browser.newPage();
-            const response = await page.goto(rateMyProfLink, { timeout: 0, waitUntil: "networkidle2"}); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
+            const response = await page.goto(rateMyProfLink, { timeout: 30000, waitUntil: "networkidle2"}); // for scraping add options like network2 or whatever; we can vary getting the source html (like in this case) or getting what the user actually sees after some js shenanigans with these options
             // Load all reviews
             let showMoreSelector = ".Buttons__Button-sc-19xdot-1.PaginationButton__StyledPaginationButton-txi1dr-1.eUNaBX";
             let showMoreButton = await page.$(showMoreSelector); // document.querySelector(".Buttons__Button-sc-19xdot-1.PaginationButton__StyledPaginationButton-txi1dr-1.eUNaBX")
             let i = 0;
             while (showMoreButton) {
                 console.log(rateMyProfLink+" NumallReviews: "+i);i++;
-                try {
-                    await page.click(showMoreSelector, {delay: 2500});
-                } catch {
-                    await waitSeconds(5);
-                    // continue;
-                    console.log("Failed to click!");
-                    break;
+                for (let i = 0; i < 3; i++) {
+                    try {
+                        // await page.click(showMoreSelector, {delay: 2500});
+                            await page.$eval(showMoreSelector, element =>
+                            element.click()
+                            );
+                    } catch {
+                        console.log("Click Failed");
+                    }
                 }
+                showMoreButton = await page.$(showMoreSelector);
+                // showMoreButton = await page.$(showMoreSelector);
             }
-            console.log("Finished ");
+            console.log("Finished expanding comments");
             let reviewSelector = 'div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb';
-            let numReviews =  await page.evaluate(() => { return (Array.from(document.querySelector(reviewSelector).children).length); });
-            let allReviews = await page.$$(reviewSelector);
-            console.log(numReviews);
-            for (let i = 0; i < numReviews; i++) {
-                const reviewChildren = await( await allReviews[i].getProperty('children') );
-                const reviewChild2Children = await( await reviewChildren[2].getProperty('children') );
-                // .children[2].children[2].innerText
-                const comment = await( await reviewChild2Children[2].getProperty('innerText') ).jsonValue();
-                toRet.push({comment:comment})
-    /**
-     *         Comment
-            - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[2].innerText
-            Quality/Difficulty
-            - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[1].innerText
-            - Newline delimited
-            For Credit/Attendance/Would Take Again/Textbook (these can be lumped together so use innerText to do that automatically)
-            - document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[1].innerText
-                - Find the line that's grade and take it and the one after out, leave the rest
-            Grade
-            - The two elements that were taken out
-            Tags
-            - "Tags: document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[0].children[2].children[3].innerText"
-                - Make sure that the length is 5 not 4 first: document.querySelectorAll("div.Rating__RatingBody-sc-1rhvpxz-0.dGrvXb")[22].children[2].children.length
-            Likes/Dislikes
-            - document.querySelectorAll("div.Thumbs__HelpTotalNumber-sc-19shlav-2.lihvHt")
-              - This one is every other one is like and dislike so don't forget to multiply by 2
-            Dates
-            - document.querySelectorAll("div.TimeStamp__StyledTimeStamp-sc-9q2r30-0.bXQmMr.RatingHeader__RatingTimeStamp-sc-1dlkqw1-4.iwwYJD")[0].innerText
-            Course
-            - document.querySelectorAll(".RatingHeader__StyledClass-sc-1dlkqw1-3.eXfReS")[0].innerText
-            - Every other one; make sure to eliminate whitespace
-            Prof Name
-            - First: document.querySelectorAll(".NameTitle__Name-dowf0z-0.cfjPUG > span")[0].innerText
-            - Last: document.querySelectorAll(".NameTitle__Name-dowf0z-0.cfjPUG > span")[1].innerText
-    
-     */
-            
-    
+            // uses reviewSelector in all but name
+                const mostOfReviews = await page.$$eval(reviewSelector, reviews => {
+                    let comments = reviews.map(review => {return review.children[2].children[2].innerText});
+                    let tags = reviews.map(review => {
+                        let length = review.children[2].children.length;
+                        if (length==5) {return review.children[2].children[3].innerText}
+                        if (length==4) {return ""}
+                        return "Whuhhhh?"
+                    });
+                    let coursedeptandnumbers = reviews.map(review => {return review.children[0].children[0].innerText.trim()});
+                    let quality = [];
+                    let difficulty = [];
+                    let grades = [];
+                    let misc = [];
+                    let dates = [];
+                    for (let i = 0; i < reviews.length; i++) {
+                        let qd = reviews[i].children[1].innerText.split('\n');
+                        quality.push(qd[1]);
+                        difficulty.push(qd[3]);
+                    }
+                    for (let i = 0; i < reviews.length; i++) {
+                        let gradesmisc = reviews[i].children[2].children[1].innerText;
+                        let gradedex = gradesmisc.indexOf("Grade: ");
+                        console.log(gradedex);
+                        if (gradedex!=-1) {
+                            let nexdex = gradesmisc.indexOf("\n",gradedex+1);
+                            let gradestart = gradedex+("Grade: ").length;
+                            let gradeend = nexdex!=-1?nexdex:gradesmisc.length;
+                            grades.push(gradesmisc.substring(gradestart,gradeend));
+                            misc.push(gradesmisc.substring(0,gradestart)+gradesmisc.substring(gradeend));
+                        } else {
+                            grades.push("");
+                            misc.push(gradesmisc);
+                        }
+                    }
+                    // https://moment.github.io/luxon/demo/global.html
+                    // Use DateTime.fromFormat('May 25, 1982', 'MMMM dd, yyyy').toFormat('yyyy-MM-dd') to convert for the final objects
+                    // their format fits this, but with last number from comma to comma being removed (exclusive)
+                    for (let i = 0; i < reviews.length; i++) {   
+                        let review = reviews[i];
+                        let date = review.children[0].children[1].innerText;
+                        let comma = date.indexOf(',');
+
+                        let lastnum = -1;
+                        let chars = date.split('');
+                        for (let j = 0; j < comma; j++) {
+                            // https://stackoverflow.com/questions/175739/how-can-i-check-if-a-string-is-a-valid-number
+                            if (!isNaN(chars[j])) {
+                                lastnum = j;
+                            }
+                        }
+
+                        try {
+                            let toPush = date.substring(0,lastnum+1)+date.substring(comma);
+                            if (chars[lastnum-1] == ' ') {
+                                toPush = date.substring(0,lastnum)+"0"+chars[lastnum]+date.substring(comma);
+                            }
+                            dates.push(toPush);
+                        }
+                        catch {
+                            dates.push("");
+                        }
+                    }
+                    return {
+                        comments:comments,
+                        qualities:quality,
+                        difficulties:difficulty,
+                        grades:grades,
+                        miscs:misc,
+                        tags:tags,
+                        dates:dates,
+                        courses:coursedeptandnumbers
+                    }
+                });
+                let likesdislikesSelector = "div.Thumbs__HelpTotalNumber-sc-19shlav-2.lihvHt";
+                const likesdislikes = await page.$$eval(likesdislikesSelector, likesdislikes => {
+                    let likes = [];
+                    let dislikes = [];
+                    if (likesdislikes.length %2 != 0) {
+                        likes.push("Mismatch");
+                        dislikes.push("Mismatch");
+                        return likesdislikes;
+                    }
+                    for (let i = 0; i< likesdislikes.length; i++) {
+                        let cur = likesdislikes[i].innerText;
+                        if (i %2 == 0) {
+                            likes.push(cur);
+                        } else {
+                            dislikes.push(cur);
+                        }
+                    }
+                    return {likes:likes,dislikes:dislikes};
+                });
+                console.log(likesdislikes.likes.length);
+                let profNameSelector = ".NameTitle__Name-dowf0z-0.cfjPUG > span";
+                const name = await page.$$eval(profNameSelector, spans => {
+                    return {first:spans[0].innerText,last:spans.length>1?spans[1].innerText:""};
+                });
+            let reviews = await page.$$(reviewSelector);
+            for (let i = 0; i < reviews.length; i++) {
+                mostOfReviews.dates[i].split('');
+                toRet.push({
+                    comment:mostOfReviews.miscs[i]+"\n"+mostOfReviews.comments[i],
+                    quality:mostOfReviews.qualities[i],
+                    difficulty:mostOfReviews.difficulties[i],
+                    grade:mostOfReviews.grades[i],
+                    tag:mostOfReviews.tags[i],
+                    likes:likesdislikes.likes[i],
+                    dislikes:likesdislikes.dislikes[i],
+                    dates:DateTime.fromFormat(mostOfReviews.dates[i], 'MMM dd, yyyy', 'yyyy-MM-dd').toString().substring(0,'yyyy-MM-dd'.length),
+                    course:mostOfReviews.courses[i],
+                    profFirstName:name.first,
+                    profLastName:name.last,
+                });
+            }
             // await page.screenshot({path: 'files/screenshot4.png'});
             // console.log("Search results: "+ await page.$("#search-results").toString());
-            }
+            await page.close();
+
         return toRet;
     
 }
@@ -603,20 +688,6 @@ const waitSeconds = (n) => {
         }, n*1000);
     });
 }
-
-const sequentiallyEvaluatePromises = (promiseArr) => {
-    return new Promise((resolve, reject) => {
-        
-        async.series(
-            promiseArr
-        , function (err, results) {
-            // Here, results is an array of the value from each function
-            resolve(results); // outputs: ['two', 'five']
-        });
-    });
-}
-
-
 //#endregion
 
 exports.getCourses = getCourses;
