@@ -27,17 +27,31 @@ router.post('/load_courses/:year', async function(req, res) {
 });
 // toddoy
 // Will output the Rate My Prof reviews as JSON of comments, after which the import can be done with writeComments
-router.put('/rate_my_prof_reviews_to_comments/:department', async function(req, res) {
-    let department = req.params.department;
-    let reviewspath = "data/"+department+"_reviewinfo.json";
+router.put('/rate_my_prof_reviews_to_comments_takes_sections/:department', async function(req, res) {
+    let department = req.params.department; // chosen from the all file or from it's own
+    let fromAllScrape = req.query.fromAllScrape;
+    let reviewspath = fromAllScrape?"data/all/reviewinfo_all_depts":"data/reviewinfo_"+department+".json";
     let dirs_exists = fs.existsSync(coursepath) && fs.existsSync(reviewspath);
     if (!dirs_exists) {
-        res.send("This department's reviews have not been scraped yet");
+        res.send("This department's reviews have not been scraped yet, at least in the All or single dept file, respectively");
     }
     let reviews = await fs.promises.readFile(reviewspath);
-
-    let comments  = await ImportServices.convertReviewsToComments(JSON.parse(reviews),department);
-
+    let toLoad  = [];
+if (fromAllScrape) {
+    toLoad  = await ImportServices.convertReviewsToTakesCommentsAndSections(JSON.parse(reviews).data[department]);
+    /**
+     * we're bulkloading all three (sections -> takes -> comments) for efficiency
+     * What are the network bottlenecks/requests we have to make? How to prevent N+1?
+     *  One request per comment at the very least since we need to find sectoin mstch with sql query... thousands
+     *  Perhaps could write a table-valued function, send over the data for a given teacher's review all at once, get back section IDs or null - would reduce to 355 which is 
+     *     aight with the use of nodebacks in series with async library esp. the by professor stuff ispurely bcuz that's the way the data's already organized. 
+     *     prolly could/should just go with all the reviews in a dept at a time as a possible function, but do by teacher for testing
+     * if null, then make a new section
+     */
+} else {
+    toLoad  = await ImportServices.convertReviewsToTakesCommentsAndSections(JSON.parse(reviews).data);
+}
+    await ScrapingServices.write("toLoad/comments_takes_sections_"+(fromAllScrape?"all":department),toRet);
 });
 // toddoy
 router.post('/load_comments/:department', async function(req, res) {

@@ -98,16 +98,48 @@ function convertToCourseSchema(courses, sections, year) {
 //#region Comments
 /** toddoy */
 // This is the most difficult method in the whole process
-function convertReviewsToComments(reviews,department) {
+async function convertReviewsToTakesCommentsAndSections(reviews) { 
+
+  // REFACTOR THIS SHIZZLE TO GET SECTION IDA ALL AT ONCE USING TVPs WITH THE REVIEWS, A SPROC, AND THEN READING FROM A TABLE AFTERWARDS
   // Iterate through each review and convert it
+
+// Get section ids for all reviews (use a subquery in the columns that will go row by row and calculate the new value for the section id in the SELECT https://www.red-gate.com/simple-talk/databases/sql-server/t-sql-programming-sql-server/using-a-subquery-in-a-select-statement/)
+  // Go through any null ones and make dummy sections for them per the algorithm below
+// Creates takes and comments to load by looping through these, and creating a section if need be, followed by the take, and finally the comment
+   // It's important to also make sure that takes that use the same sectionid and a null userid are not hit with uniqueness issues
+// Return all three arrays in an object
+
+  let reviewsData = [];
+  for (let i = 0; i < reviews.length; i++) {
+    reviewsData.push(reviews[i]);
+  }
+  console.log("Got here");
+  let sectionIDs = await getSectionIDs(reviewsData);
+  let takes = [];
+  for (let i = 0; i < reviews.length; i++) {
+    let sectionID = sectionIDs[i];
+    if (!sectionID) {
+// generate
+    }
+    takes.push(
+        {
+            UserID:null, // it's a name
+            CourseID:sectionID,
+            Grade: letterGradeToNum
+        }
+    );
+  }
+
+  return toRet;
+  return reviewsData;
 }
 /** toddoy */
 /**
  * Review Schema: (Quality, Difficulty, For Credit, Attendance, Would Take Again), 
                   (Grade), (Textbook, SourceLink, Tags), (Likes, Dislikes), (Date), (Course), 
                   (Prof Name)
- * Goal Schema: @likes INT,@takeid INT,@commentdate DATE,@comment varchar(1000) <- Takes
-                  and @userid INT,@courseid INT,@grade float <- CourseComments
+ * Goal Schema: @likes INT,@takeid INT,@commentdate DATE,@comment varchar(1000) <- CourseComments
+                  and @userid INT,@courseid INT,@grade float <- Takes
     @likes INT
       Likes-Dislikes
     @takeid INT
@@ -126,9 +158,6 @@ function convertReviewsToComments(reviews,department) {
       Textbook, SourceLink, Tags
       
  */
-function reviewToCommentSectionsTakes(review,department) {
-  
-}
 // Creates or gets section id from the available review data
 /** toddoy */
 /**
@@ -160,16 +189,21 @@ function reviewToCommentSectionsTakes(review,department) {
       Name: course
       Dept: course
       Credits: course
-      Professor: Review
+      Professor: course: without the parentheses on/Review: the names we have, minus a space at the end of the first name
       Number: course
       Year: course/review
       Quarter: course/review
-      CourseDeptAndNumber: course
+      CourseDeptAndNumber: course/the review's should start with this one
       Section: RMP01
     Log any failures
  */
-async function getSectionID(review,department) {
+// returns false if there isn't a section like it
+async function getSectionIDs(reviews) {
 // 
+}
+// See comment above getSectionID
+async function makeSection(review) {
+  // 
 }
 /** toddoy */
 // Pretty straightforward, clone of old functionality
@@ -216,5 +250,5 @@ const connectPromise = (connection) => {
 //#endregion
 
 exports.writeCourses = writeCourses;
-exports.convertReviewsToComments = convertReviewsToComments;
+exports.convertReviewsToTakesCommentsAndSections = convertReviewsToTakesCommentsAndSections;
 exports.writeComments = writeComments;
