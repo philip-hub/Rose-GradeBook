@@ -104,7 +104,7 @@ router.post('/rate_my_prof_reviews/:depnum',async function(req,res) {
 router.post('/rate_my_prof_reviews',async function(req,res) {
     let numDepts = 15; // TODO change if this changes in the future
     let toRet = {};
-    for (let depnum = 9; depnum <= numDepts; depnum++) {
+    for (let depnum = 1; depnum <= numDepts; depnum++) {
         console.log("depnum: "+depnum);
         let path = "data/rate_my_prof_links_"+depnum+".json";
         let dirs_exists = fs.existsSync(path);

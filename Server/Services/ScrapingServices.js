@@ -566,8 +566,6 @@ async function getReviewsSinglePage(rateMyProfLink,browser) {
                         }
                     }
                     // https://moment.github.io/luxon/demo/global.html
-                    // Use DateTime.fromFormat('May 25, 1982', 'MMMM dd, yyyy').toFormat('yyyy-MM-dd') to convert for the final objects
-                    // their format fits this, but with last number from comma to comma being removed (exclusive)
                     for (let i = 0; i < reviews.length; i++) {   
                         let review = reviews[i];
                         let date = review.children[0].children[1].innerText;

@@ -404,7 +404,7 @@ async function readCourses (courseid, name, department, credits, professor, year
     if (department) { request.addParameter('department', types.VarChar, department); }
     if (credits) { request.addParameter('credits', types.Float, credits); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
 
@@ -452,7 +452,7 @@ async function readCoursesPagination(page, courseid, name, department, credits, 
     if (department) { request.addParameter('department', types.VarChar, department); }
     if (credits) { request.addParameter('credits', types.Float, credits); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
 
@@ -505,7 +505,7 @@ async function numPages(courseid, name, department, credits, professor, year, qu
     if (department) { request.addParameter('department', types.VarChar, department); }
     if (credits) { request.addParameter('credits', types.Float, credits); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
 
@@ -620,7 +620,7 @@ async function readCourseComments (page, courseid, name, department, credits, pr
     if (department) { request.addParameter('department', types.VarChar, department); }
     if (credits) { request.addParameter('credits', types.Float, credits); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
 
@@ -711,7 +711,7 @@ async function numCommentsPages(courseid, name, department, credits, professor, 
     if (department) { request.addParameter('department', types.VarChar, department); }
     if (credits) { request.addParameter('credits', types.Float, credits); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
 
@@ -912,7 +912,7 @@ async function courseCalculatedAverage(courseid, department, credits, professor,
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
 
     connection.execSql(request);
 
@@ -949,7 +949,7 @@ async function courseCalculatedAverageCount(courseid, department, credits, profe
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
 
     connection.execSql(request);
 
@@ -989,7 +989,7 @@ async function courseCalculatedAverageStdDev(courseid, department, credits, prof
     if (quarter) { request.addParameter('quarter', types.VarChar, quarter); }
     if (professor) { request.addParameter('professor', types.VarChar, professor); }
     if (coursedeptandnumber) { request.addParameter('coursedeptandnumber', types.VarChar, coursedeptandnumber); }
-    if (year) { request.addParameter('year', types.Date, newYearDate(year)); }
+    if (year) { request.addParameter('year', types.Date, midYearDate(year)); }
 
     connection.execSql(request);
 
@@ -1328,7 +1328,7 @@ function booleanToBit(bool) {
     return bool?1:0;
 }
 
-function newYearDate (year) {
+function midYearDate (year) {
     return year+"-06-06";
 }  
 

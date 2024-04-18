@@ -1,0 +1,2 @@
+ALTER TABLE Takes
+DROP CONSTRAINT UC_UserCourse;
