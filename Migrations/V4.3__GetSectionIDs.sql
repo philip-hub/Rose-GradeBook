@@ -18,9 +18,11 @@ SELECT (
         THEN SUBSTRING(Professor, 0, CHARINDEX('.', Professor)-2)
         ELSE SUBSTRING(Professor, 0, CHARINDEX('(', Professor)-1)
         END)
- AND Yr = [Year]
- AND Qr = [Quarter]
- AND Cr LIKE CourseDeptAndNumber+'%')
+        AND Yr = [Year]
+        AND Qr = [Quarter]
+        AND Cr LIKE CourseDeptAndNumber+'%'
+    ORDER BY CourseID DESC
+    )
 as SectionID
 FROM @review_data 
 END

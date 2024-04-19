@@ -125,9 +125,10 @@ let reviewsData = [];
   for (let i = 0; i < reviews.length; i++) {
     let sectionID = sectionIDs[i];
     if (!sectionID) {
-      let created = {};
+      let created = [];
       try {
         created = await reviewToNewSection(reviews[i]);
+        created = Object.values(created); // since we're switching to tvp
       } catch (err) {
         console.log("Error"+err);
         console.log("course: "+reviews[i].course);
@@ -136,16 +137,11 @@ let reviewsData = [];
     }
   }
 
-  const connection = await getNewConnection(true,true);
-  await bulkLoadSections(sections, connection);
 
-  connection.on('error', async function (err) {
-    // bulk load failed
-    if (err) {
-      console.log("Er: "+err);
-        throw err;
-    }
-  });
+  let success1 = await insertSectionsUnique(sections);
+  if (success1 != 0) {
+    throw 'Failed insert sections: '+success1;
+  }
 
   sectionIDs = await getSectionIDs(reviewsData);
   for (let i = 0; i < reviews.length; i++) {
@@ -153,27 +149,22 @@ let reviewsData = [];
     if (!sectionID) {
       throw "Still null section id, that's bad";
     }
-    takes.push(
-        {
-            UserID:null, // it's a name
-            CourseID:sectionID,
-            Grade: letterGradeToNum(reviews[i].Grade)
-        }
-    );
+    let created = {
+        UserID:null, // it's a name
+        CourseID:sectionID,
+        Grade: letterGradeToNum(reviews[i].grade)
+    };
+    created = Object.values(created); // since we're switching to tvp
+    takes.push(created);
   }
-  const connection2 = await getNewConnection(true,true);
-  let numRows = await bulkLoadTakes(takes, connection2);
-  connection2.on('error', async function (err) {
-    // bulk load failed
-    if (err) {
-      console.log("Er: "+err);
-        throw err;
-    }
-  });
+  let numTakesInserted = await insertTakesUnique(takes);
 
-  let takeIDs = await getNRecentTakeIDs(numRows);
+  let takeIDs = await getTakeIDs(reviewsData, numTakesInserted); // needs to be ordered parallel to the reviews
   for (let i = 0; i < reviews.length; i++) {
     let takeID = takeIDs[i];
+    if (!takeID) {
+      throw 'No matching take';
+    }
     comments.push(
       {
           Likes:reviews[i].likes-reviews[i].dislikes, // it's a name
@@ -183,9 +174,9 @@ let reviewsData = [];
       }
     );
   }
-  const connection3 = await getNewConnection(true,true);
-  let numComments = await bulkLoadComments(comments, connection3);
-  connection3.on('error', async function (err) {
+  const connection = await getNewConnection(true,true);
+  let numComments = await bulkLoadComments(comments, connection);
+  connection.on('error', async function (err) {
     // bulk load failed
     if (err) {
       console.log("Er: "+err);
@@ -197,60 +188,87 @@ let reviewsData = [];
 
   return numComments;
 }
-const bulkLoadSections = (toLoad, connection) => {
-  return new Promise((resolve, reject) => {
+async function insertSectionsUnique (sectionsData) {
+  let table = {
+    columns: [
+      {name: 'Ne', type: types.VarChar, length: 100},
+      {name: 'Dt', type: types.VarChar, length: 10},
+      {name: 'Cs', type: types.Int},
+      {name: 'Nr', type: types.VarChar, length: 10},
+      {name: 'Yr', type: types.Date},
+      {name: 'Qr', type: types.VarChar, length: 10},
+      {name: 'Pr', type: types.VarChar, length: 100},
+      {name: 'Cr', type: types.VarChar, length: 20},      
+      {name: 'Sn', type: types.VarChar, length: 5}
+    ],
+    rows: 
+    // [
+    //   [15, 'Eric', true],
+    //   [16, 'John', false]
+    // ]
+    sectionsData
+  };
 
-  const options = { keepNulls: true };
-  // instantiate - provide the table where you'll be inserting to, options and a callback
-  const bulkLoad = connection.newBulkLoad('Courses', options, function (error, rowCount) {
-      console.log("error: "+error);
-      console.log('inserted %d rows', rowCount);
-      if (error) {
-        throw error;
-      }
-      resolve(rowCount);
+  let connection = await getNewConnection(false,true); // same as a sql run, need that table data
+
+  const request = new RequestM('insertSectionsUnique', (err, rowCount) => {
+    if (err) {
+      console.log('Statement failed: ' + err);
+      callback = err;
+    } else {
+      console.log('No errors in TVP')
+      callback = 'Success';
+    }
+      connection.close();
   });
-  console.log("Starting Bulkload");
-  // setup your columns - always indicate whether the column is nullable
-  bulkLoad.addColumn('Name', types.VarChar, { length:100, nullable: false });
-  bulkLoad.addColumn('Dept', types.VarChar, { length:10, nullable: false });
-  bulkLoad.addColumn('Credits', types.Float, { nullable: true,precision:24 });
-  bulkLoad.addColumn('Professor', types.VarChar, { length:100, nullable: true }); // okay, so this isn't normalized, but I don't care
-  bulkLoad.addColumn('Number', types.VarChar, { length:10, nullable: false });
-  bulkLoad.addColumn('Year', types.Date, { nullable: false });
-  bulkLoad.addColumn('Quarter', types.VarChar, { length:10,nullable: false });
-  bulkLoad.addColumn('CourseDeptAndNumber', types.VarChar, { length:20, nullable: true }); // only not calculated or efficiency tings
-  bulkLoad.addColumn('Section', types.VarChar, { length:5, nullable: true }); // only not calculated or efficiency tings
 
-  // execute
-  connection.execBulkLoad(bulkLoad, toLoad);
-});
+  request.addParameter('section_data', types.TVP, table);
 
+  connection.callProcedure(request);
+  let count = await callProcedureRequestFinalReturnPromise(request);
+
+  return count;
 }
-const bulkLoadTakes = (toLoad, connection) => {
-  return new Promise((resolve, reject) => {
+async function insertTakesUnique (takesData) {
+  let table = {
+    columns: [
+      {name: 'Ud', type: types.Int},
+      {name: 'Cd', type: types.Int},
+      {name: 'Ge', type: types.Float, precision:24}
+    ],
+    rows: 
+    // [
+    //   [15, 'Eric', true],
+    //   [16, 'John', false]
+    // ]
+    takesData
+  };
 
-  const options = { keepNulls: true };
-  // instantiate - provide the table where you'll be inserting to, options and a callback
-  const bulkLoad = connection.newBulkLoad('Takes', options, function (error, rowCount) {
-      console.log("error: "+error); 
-      console.log('inserted %d rows', rowCount);
-      if (error) {
-        throw error;
-      }
-      resolve(rowCount);
+  let connection = await getNewConnection(false,true); // same as a sql run, need that table data
+
+  const request = new RequestM('InsertTakesUnique', (err, rowCount) => {
+    if (err) {
+      console.log('Statement failed: ' + err);
+      callback = err;
+    } else {
+      console.log('No errors in TVP')
+      callback = 'Success';
+    }
+      connection.close();
   });
-  console.log("Starting Bulkload");
 
-  // setup your columns - always indicate whether the column is nullable
-  bulkLoad.addColumn('UserID', types.Int, { nullable: false });
-  bulkLoad.addColumn('CourseID', types.Int, { nullable: true });
-  bulkLoad.addColumn('Grade', types.Float, { nullable: true,precision:53 });
+  request.addParameter('take_data', types.TVP, table);
+  request.addOutputParameter('numRows', types.Int);
 
-  // execute
-  connection.execBulkLoad(bulkLoad, toLoad);
-});
+  connection.callProcedure(request);
+  let numrows = await callProcedureRequestOutputParamPromise (request);// this makes sense; it isn't sequential, it speedruns through and waits for both
+  let success = await callProcedureRequestFinalReturnPromise (request);
 
+  if (success != 0) {
+    throw 'Failed insert takes: '+success;
+  }
+
+  return numrows;
 }
 const bulkLoadComments = (toLoad, connection) => {
   return new Promise((resolve, reject) => {
@@ -384,12 +402,33 @@ async function getSectionIDs(reviewsData) {
 
   return toRet;
 }
+async function getTakeIDs(n) {
+    let toRet = [];
+    const connection = await getNewConnection(false,true);
+    let sql = 'SELECT q.*  FROM (select top '+n+' takeid AS TakeId from Takes order by takeid desc) q ORDER BY q.id ASC';
+    let request = new RequestM(sql, function (err, rowCount, rows) {
+        if (err) {
+            return err;
+        }
+    });
+
+    connection.execSql(request);
+
+    let rows2 = await execSqlRequestDonePromise (request);
+    rows2.forEach((columns) => {
+        let toPush = 
+        convertFromGetTakeIDsSchema(columns);
+        toRet.push(toPush);
+    });
+
+    return toRet;
+}
 // See comment above getSectionID
 async function reviewToNewSection(review) {
   let dept = await matchDept(review.course);
   let quarterYear = getQuarterAndYear(review);
   let number = review.course.substring(dept.length).toUpperCase();
-  let coursedeptandnumber = review.course.substring(0, dept.length).toUpperCase();
+  let coursedeptandnumber = review.course.toUpperCase();
   let professor = review.profLastName.trim()+", "+review.profFirstName.trim();
   if (number.length > 10) {
     number = number.substring(0,10);
@@ -397,9 +436,11 @@ async function reviewToNewSection(review) {
   if (coursedeptandnumber.length > 20) {
     coursedeptandnumber = coursedeptandnumber.substring(20);
   }
-  if (professor > 100) {
-    professor = professor.substring(100);
+  if (professor > 97) {
+    professor = professor.substring(97);
   }
+professor += ' ()';
+  // (name,dept,credits,professor,number,year,quarter,coursedeptandnumber,section)
   return section_factory(
     coursedeptandnumber,
     dept,
@@ -412,7 +453,13 @@ async function reviewToNewSection(review) {
     "RMP"
     );
 }
-
+function getComment(review) {
+  return `${DateTime.fromFormat(review.dates, 'yyyy-MM-dd').toFormat('MMMM dd, yyyy')}\n
+  \nQuality: ${review.quality}/5.0, Difficulty: ${review.difficulty}/5.0\n
+  \n${review.comment}\n
+  \n Tags: ${review.tag}\n
+  \n Likes: ${review.likes}, Dislikes: ${review.dislikes}`;
+}
 function convertFromGetSectionIDsSchema(row) {
   let sectionid = 0;
 
@@ -429,6 +476,15 @@ function convertFromGetSectionIDsSchema(row) {
           // the front end should also recoil in horror, separately
               // There should be a strikethrough /graying out of any non-veg in reqs or general list
   return sectionid;
+}
+function convertFromGetTakeIDsSchema(row) {
+  let takeid = 0;
+
+  row.forEach((column) => {
+                  takeid = column.value;      });
+          // the front end should also recoil in horror, separately
+              // There should be a strikethrough /graying out of any non-veg in reqs or general list
+  return takeid;
 }
 //#endregion
 
@@ -488,6 +544,9 @@ function letterGradeToNum(letterGrade) {
     case 'F':
       return 0;
     default:
+      if (letterGrade.length <= 2) {
+        return letterGradeToNum(letterGrade.substring(0,1));
+      }
       return null;
   }
 }
@@ -553,24 +612,56 @@ const callProcedureRequestOutputParamPromise = (request) => {
   });
 }
 
+const callProcedureRequestFinalReturnPromise = (request) => {
+  return new Promise((resolve, reject) => {
+      // This literally does it for subparts of the sproc (which could obvi lead to weird stuff if intermediate steps (table valued variables) 
+          // are returned during a complex procedure)
+          // But this should be fine so long as it's used for execSql requests and not callProcedure or something
+      request.on('doneProc', function (rowCount, more, returnStatus, rows) {
+          console.log('SPROC Return!');
+          resolve(returnStatus);
+      });
+  });
+}
+
 const tableReturnRequestDonePromise = (request) => {
   return new Promise((resolve, reject) => {
       // This literally does it for subparts of the sproc (which could obvi lead to weird stuff if intermediate steps (table valued variables) 
           // are returned during a complex procedure)
           // But this should be fine so long as it's used for execSql requests and not callProcedure or something
       request.on('doneInProc',function (rowCount, more, rows) {
+          // console.log('Jared Dunn (In Proc)!');
+          // console.log("useful: "+rowCount);
+          resolve(rows);
+      });
+      request.on('done',function (rowCount, more, rows) {
+          // console.log('Jared Dunn (NOT Proc)!');
+          // console.log("useful: "+rowCount);
+          resolve(rows);
+      });
+      request.on('doneProc',function (rowCount, more, rows) {
+          // console.log('Jared Dunn (Proc)!');
+          // console.log("useful: "+rowCount);
+          resolve(rows);
+      });
+  });
+}
+
+const execSqlRequestDonePromise = (request) => {
+  return new Promise((resolve, reject) => {
+      // This literally does it for subparts of the sproc (which could obvi lead to weird stuff if intermediate steps (table valued variables) 
+          // are returned during a complex procedure)
+          // But this should be fine so long as it's used for execSql requests and not callProcedure or something
+      request.on('doneInProc',function (rowCount, more, rows) {
           console.log('Jared Dunn (In Proc)!');
-          console.log("useful: "+rowCount);
           resolve(rows);
       });
       request.on('done',function (rowCount, more, rows) {
           console.log('Jared Dunn (NOT Proc)!');
-          console.log("useful: "+rowCount);
           resolve(rows);
       });
       request.on('doneProc',function (rowCount, more, rows) {
           console.log('Jared Dunn (Proc)!');
-          console.log("useful: "+rowCount);
           resolve(rows);
       });
   });
