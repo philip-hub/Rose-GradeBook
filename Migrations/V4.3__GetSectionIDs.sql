@@ -4,8 +4,10 @@ CREATE TYPE ReviewData AS TABLE (
   Qr varchar(10), -- quarter
   Cr varchar(20) -- courseDeptAndNumber
 )
+
 --https://www.mssqltips.com/sqlservertip/1483/using-table-valued-parameters-tvp-in-sql-server/
 GO
+
 -- use new tech to match on four fields, esp professor name
 CREATE OR ALTER PROCEDURE getSectionIDs
 @review_data ReviewData READONLY

@@ -109,7 +109,9 @@ async function writeComments(reviews) {
 let sections = [];
 let takes = [];
 let reviewsData = [];
-
+let gradeDataAndSectionIDs = [];
+let comments = [];
+  
   for (let i =  0; i < reviews.length; i++) {
     let review = reviews[i];
     let quarterYear = getQuarterAndYear(review);
@@ -159,7 +161,11 @@ let reviewsData = [];
   }
   let numTakesInserted = await insertTakesUnique(takes);
 
-  let takeIDs = await getTakeIDs(reviewsData, numTakesInserted); // needs to be ordered parallel to the reviews
+  for (let i = 0; i < reviews.length; i++) {
+    gradeDataAndSectionIDs.push([sectionIDs[i], letterGradeToNum(reviews[i].grade)]);
+  }
+
+  let takeIDs = await getTakeIDs(gradeDataAndSectionIDs, numTakesInserted); // needs to be ordered parallel to the reviews
   for (let i = 0; i < reviews.length; i++) {
     let takeID = takeIDs[i];
     if (!takeID) {
@@ -194,10 +200,10 @@ async function insertSectionsUnique (sectionsData) {
       {name: 'Ne', type: types.VarChar, length: 100},
       {name: 'Dt', type: types.VarChar, length: 10},
       {name: 'Cs', type: types.Int},
+      {name: 'Pr', type: types.VarChar, length: 100},
       {name: 'Nr', type: types.VarChar, length: 10},
       {name: 'Yr', type: types.Date},
       {name: 'Qr', type: types.VarChar, length: 10},
-      {name: 'Pr', type: types.VarChar, length: 100},
       {name: 'Cr', type: types.VarChar, length: 20},      
       {name: 'Sn', type: types.VarChar, length: 5}
     ],
@@ -209,7 +215,7 @@ async function insertSectionsUnique (sectionsData) {
     sectionsData
   };
 
-  let connection = await getNewConnection(false,true); // same as a sql run, need that table data
+  let connection = await getNewConnection(false,false); // same as a sql run, need that table data
 
   const request = new RequestM('insertSectionsUnique', (err, rowCount) => {
     if (err) {
@@ -244,8 +250,8 @@ async function insertTakesUnique (takesData) {
     takesData
   };
 
-  let connection = await getNewConnection(false,true); // same as a sql run, need that table data
-
+  let connection = await getNewConnection(false,false); 
+  
   const request = new RequestM('InsertTakesUnique', (err, rowCount) => {
     if (err) {
       console.log('Statement failed: ' + err);
@@ -402,26 +408,46 @@ async function getSectionIDs(reviewsData) {
 
   return toRet;
 }
-async function getTakeIDs(n) {
-    let toRet = [];
-    const connection = await getNewConnection(false,true);
-    let sql = 'SELECT q.*  FROM (select top '+n+' takeid AS TakeId from Takes order by takeid desc) q ORDER BY q.id ASC';
-    let request = new RequestM(sql, function (err, rowCount, rows) {
-        if (err) {
-            return err;
-        }
-    });
+async function getTakeIDs(reviewsDataAndSectionIDs, numTakesInserted) {
+  let table = {
+    columns: [
+      {name: 'Sd', type: types.Int},
+      {name: 'Ge', type: types.Float, precision: 53}
+    ],
+    rows: 
+    // [
+    //   [15, 'Eric', true],
+    //   [16, 'John', false]
+    // ]
+    reviewsDataAndSectionIDs
+  };
 
-    connection.execSql(request);
+  let connection = await getNewConnection(false,true); // same as a sql run, need that table data
 
-    let rows2 = await execSqlRequestDonePromise (request);
-    rows2.forEach((columns) => {
-        let toPush = 
-        convertFromGetTakeIDsSchema(columns);
-        toRet.push(toPush);
-    });
+  const request = new RequestM('getTakeIDs', (err, rowCount) => {
+    if (err) {
+      console.log('Statement failed: ' + err);
+      callback = err;
+    } else {
+      console.log('No errors in TVP')
+      callback = 'Success';
+    }
+      connection.close();
+  });
 
-    return toRet;
+  request.addParameter('data', types.TVP, table);
+  request.addParameter('numRows', types.Int, numTakesInserted);
+
+  connection.callProcedure(request);
+  let toRet = [];
+  let rows2 = await tableReturnRequestDonePromise (request);
+  rows2.forEach((row) => {
+      let takeid = 
+      convertFromGetTakeIDsSchema(row);
+      toRet.push(takeid);
+  });
+
+  return toRet;
 }
 // See comment above getSectionID
 async function reviewToNewSection(review) {
