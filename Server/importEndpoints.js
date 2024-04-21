@@ -51,8 +51,18 @@ router.put('/load_comments/:department', async function(req, res) {
          * if null, then make a new section
         */
     }
-    reviews = Object.values(reviews).reduce((t, n) => t.push(n));
-    res.send(await ImportServices.writeComments(reviews));
+    reviews = Object.values(reviews).reduce(function (elem1, elem2) {
+        if (!Array.isArray(elem1)) {
+            elem1 = [];
+            // console.log("iraishimasse 1");
+        }
+        if (!Array.isArray(elem2)) {
+            elem2 = [];
+            // console.log("iraishimasse 2");
+        }
+        return elem1.concat(elem2);
+    });
+    res.send("Num comment written: "+await ImportServices.writeComments(reviews, department));
 });
 
 // https://stackoverflow.com/questions/18275386/how-to-automatically-delete-records-in-sql-server-after-a-certain-amount-of-time

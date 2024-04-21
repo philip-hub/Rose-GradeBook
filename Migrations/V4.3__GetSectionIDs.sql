@@ -15,14 +15,14 @@ AS
 BEGIN
 SELECT (
     SELECT TOP 1 CourseID FROM Courses
-    WHERE Pf = 
+    WHERE Pf LIKE
         (CASE WHEN CHARINDEX('.', Professor) <> 0
         THEN SUBSTRING(Professor, 0, CHARINDEX('.', Professor)-2)
         ELSE SUBSTRING(Professor, 0, CHARINDEX('(', Professor)-1)
-        END)
+        END)+'%'
         AND Yr = [Year]
         AND Qr = [Quarter]
-        AND Cr LIKE CourseDeptAndNumber+'%'
+        AND Cr LIKE CourseDeptAndNumber+'%' -- none of this was null so no need for null check
     ORDER BY CourseID DESC
     )
 as SectionID

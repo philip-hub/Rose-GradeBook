@@ -15,14 +15,14 @@ BEGIN
 
 
 SELECT (
+  
   SELECT TakeID FROM Takes
   WHERE 
     TakeID IN (SELECT TOP (@numRows) TakeID FROM Takes ORDER BY TakeID DESC)
     AND Sd=CourseID
-    AND Ge=Grade
+    AND (Ge=Grade OR (Ge is null and Grade is null))
     )
 as TakeID
 FROM @data 
 END
 GO
-

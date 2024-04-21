@@ -96,7 +96,9 @@ function convertToCourseSchema(courses, sections, year) {
 //#region Comments
 /** toddoy */
 // This is the most difficult method in the whole process
-async function writeComments(reviews) { 
+async function writeComments(reviews, depnum) { 
+/** You can use binary search by slicing array to find invalid input */
+// reviews = reviews.slice(62,63);
 
   // REFACTOR THIS SHIZZLE TO GET SECTION IDA ALL AT ONCE USING TVPs WITH THE REVIEWS, A SPROC, AND THEN READING FROM A TABLE AFTERWARDS
   // Iterate through each review and convert it
@@ -129,11 +131,14 @@ let comments = [];
     if (!sectionID) {
       let created = [];
       try {
-        created = await reviewToNewSection(reviews[i]);
+        created = await reviewToNewSection(reviews[i], depnum);
         created = Object.values(created); // since we're switching to tvp
       } catch (err) {
-        console.log("Error"+err);
+        console.log("Error: "+err);
         console.log("course: "+reviews[i].course);
+        console.log("check the dept isn't too long or unrecognized, if not add it");
+         console.log("If there's an error here add it only up to the length of 10 in the JSON");
+         console.log("Really should only happen with the number ones to keep track of them");
       }
       sections.push(created);
     }
@@ -170,7 +175,7 @@ let comments = [];
     let takeID = takeIDs[i];
     if (!takeID) {
       throw 'No matching take';
-    }
+    } 
     comments.push(
       {
           Likes:reviews[i].likes-reviews[i].dislikes, // it's a name
@@ -449,13 +454,24 @@ async function getTakeIDs(reviewsDataAndSectionIDs, numTakesInserted) {
 
   return toRet;
 }
-// See comment above getSectionID
-async function reviewToNewSection(review) {
-  let dept = await matchDept(review.course);
+// See comment above getSectio nID
+async function reviewToNewSection(review, depnum) {
+  // If there's an error here add it only up to the length of 10 in the JSON
+  let dept = await matchDept(review.course)
+  if (!dept)
+  {
+    let dex = roughDeptEnd(review.course);
+    if (!dex) {
+      throw "No matching dept";
+    } else {
+      dept = review.course.substring(0,dex);
+    }
+}
   let quarterYear = getQuarterAndYear(review);
   let number = review.course.substring(dept.length).toUpperCase();
   let coursedeptandnumber = review.course.toUpperCase();
   let professor = review.profLastName.trim()+", "+review.profFirstName.trim();
+
   if (number.length > 10) {
     number = number.substring(0,10);
   }
@@ -476,7 +492,7 @@ professor += ' ()';
     quarterYear.year,
     quarterYear.quarter,
     coursedeptandnumber,
-    "RMP"
+    "RMP"+depnum
     );
 }
 function getComment(review) {
@@ -549,6 +565,10 @@ function getQuarterAndYear(review) {
 }
 
 function letterGradeToNum(letterGrade) {
+  if (letterGrade.length == 0) {
+    return null;
+  }
+
   letterGrade = letterGrade.toUpperCase();
   switch (letterGrade) {
     case "A+":
@@ -576,7 +596,19 @@ function letterGradeToNum(letterGrade) {
       return null;
   }
 }
-
+function roughDeptEnd(course) {
+  let arr = Array.from(course);
+  if (!isNaN(arr[0])) { // Starts with number
+    return false;
+  }
+  let dex = false;
+  for (let j = 0; j < 10 && j < course.length; j++) {
+    if (isNaN(course[j])) {
+        dex = j;
+    }
+}
+  return dex?dex+1:10;
+}
 function section_factory(name,dept,credits,professor,number,year,quarter,coursedeptandnumber,section){
   return {
     Name:name,
@@ -598,7 +630,7 @@ async function matchDept(course) {
       return depts[i];
     }
   }
-  throw "No matching dept";
+  return false;
 }
 //#endregion
 
