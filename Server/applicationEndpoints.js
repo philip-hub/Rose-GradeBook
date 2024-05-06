@@ -363,6 +363,7 @@ router.get('/users_calculated_average', async function(req, res) {
   }
 });
 // Example: http://localhost:3000/application/courses_calculated_average?department=CSSE
+// http://localhost:3000/application/courses_calculated_average?professor=Song, Lixing (song3)
 router.get('/courses_calculated_average', async function(req, res) {
   let courseid = req.query.courseid;
   let department = req.query.department;

@@ -1,0 +1,9 @@
+- Reduce Cloud Costs for DB
+  - Use an AMI to create the EC2 instance with SQL Server running; and EBS
+    - https://stackoverflow.com/questions/28592278/does-it-make-sense-to-bake-your-ami-if-you-use-cfn-init-in-your-cloudformation-t
+    - https://s3.amazonaws.com/cloudformation-examples/BoostrappingApplicationsWithAWSCloudFormation.pdf
+      - Based on the descriptions, it seems like AMI would be good for both DB and any horizontal scaling
+- Finish Front End
+  - 
+- 
+  - 
