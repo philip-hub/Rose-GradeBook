@@ -90,7 +90,12 @@
       "SubnetPool":{
          "Description":"The IP address range that can be used to SSH to the EC2 instances",
          "Type":"String"
-      }
+      },
+      "AmiId" : {
+         "Description" : "The ID of the AMI to use for the EC2 instance",
+         "Default": "ami-059f4aad319ff1bc3",
+         "Type": "String"
+     }
    },
    "Metadata":{
       "SNC::Parameter::Metadata":{
@@ -351,23 +356,7 @@
             "SubnetId":{
                "Ref":"SubnetPool"
             },
-            "ImageId":{
-               "Fn::FindInMap":[
-                  "AWSRegionArch2AMI",
-                  {
-                     "Ref":"AWS::Region"
-                  },
-                  {
-                     "Fn::FindInMap":[
-                        "AWSInstanceType2Arch",
-                        {
-                           "Ref":"InstanceType"
-                        },
-                        "Arch"
-                     ]
-                  }
-               ]
-            }
+            "ImageId" : { "Ref" : "AmiId" },
          }
       },
       "InstanceSecurityGroup":{
