@@ -4,8 +4,13 @@
       - Based on the descriptions, it seems like AMI would be good for both DB and any horizontal scaling
 - SSH
   - https://stackoverflow.com/questions/25869207/getting-warning-unprotected-private-key-file-error-message-while-attempting
-- Download MariaDB
-  - https://medium.com/@mehmetodabashi/how-to-install-mariadb-on-an-ec2-instance-cbe688038542
+- Download MariaDB and connect from mac with TablePlus
+  - Make sure to use elastic ip for
+  - cd to Documents for the .pem that gets autosuggested
+  - Found one that fuckin worked, this guy goated: https://www.youtube.com/watch?v=R32-B731Jbg
+    - Lessons learned: allow all traffic in security group, be very careful with what users you create in mysql, they need % for remote access
+      - https://medium.com/@mehmetodabashi/how-to-install-mariadb-on-an-ec2-instance-cbe688038542
+        - Supplementary, for systemctl enable
     - Used this to fill in any missing commands, and sudo for oner of the last ones
       - https://docs.aws.amazon.com/linux/al2023/ug/ec2-lamp-amazon-linux-2023.html#prepare-lamp-server-2023
 - Finish Front End
