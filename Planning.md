@@ -1,10 +1,12 @@
 - Reduce Cloud Costs for DB
-  - Use an AMI to create the EC2 instance with SQL running (MariaDB, specifically, seems to play the most nicely with AWS Linux and windows images cost money)
-    - https://stackoverflow.com/questions/28592278/does-it-make-sense-to-bake-your-ami-if-you-use-cfn-init-in-your-cloudformation-t
-      - Yes, you use AMIs in conjunction with CFN
+- Make AMI
       - TODO: Follow from [ASSOCIATESHARED] [DEMO] Creating an Animals4life AMI - PART 1 onwards in the creation of the DB server
       - Based on the descriptions, it seems like AMI would be good for both DB and any horizontal scaling
-    - https://stackoverflow.com/questions/56280999/how-to-specify-ami-in-cloudformation
-      - TODO: Link with EBS, do the cloudformation sections early
+- SSH
+  - https://stackoverflow.com/questions/25869207/getting-warning-unprotected-private-key-file-error-message-while-attempting
+- Download MariaDB
+  - https://medium.com/@mehmetodabashi/how-to-install-mariadb-on-an-ec2-instance-cbe688038542
+    - Used this to fill in any missing commands, and sudo for oner of the last ones
+      - https://docs.aws.amazon.com/linux/al2023/ug/ec2-lamp-amazon-linux-2023.html#prepare-lamp-server-2023
 - Finish Front End
   - Shouldn't be too bad
