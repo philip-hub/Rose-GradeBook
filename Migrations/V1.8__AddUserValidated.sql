@@ -1,2 +1,1 @@
-ALTER TABLE Users
-ADD IsValidated BIT NOT NULL;
+ALTER TABLE Users ADD IsValidated BIT NOT NULL;

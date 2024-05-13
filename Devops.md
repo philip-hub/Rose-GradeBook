@@ -1,3 +1,8 @@
+- SQL Server to MySQL
+  - SPROCS to functions
+    - So SQL Server has sprocs with output params and return values; you have to choose between them for MySQL/MariaDB
+  - New Node package
+    - https://www.npmjs.com/package/mariadb
 - Reduce Cloud Costs for DB
 - Make AMI
       - TODO: Follow from [ASSOCIATESHARED] [DEMO] Creating an Animals4life AMI - PART 1 onwards in the creation of the DB server

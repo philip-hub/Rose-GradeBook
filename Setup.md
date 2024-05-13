@@ -14,6 +14,7 @@ sudo dnf install mariadb105-server
 
 sudo systemctl start mariadb
 sudo systemctl status mariadb
+sudo systemctl enable mariadb
 
 # enter same password as dbrootpassword ig, say no to things you dont understand yes to what sounds good
 sudo mysql_secure_installation

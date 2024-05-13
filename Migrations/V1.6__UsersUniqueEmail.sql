@@ -1,2 +1,1 @@
-ALTER TABLE Users
-ADD CONSTRAINT Users_UniqueEmail UNIQUE (Email);
+ALTER TABLE Users ADD CONSTRAINT Users_UniqueEmail UNIQUE (Email);
