@@ -1,0 +1,1 @@
+ALTER TABLE Takes DROP COLUMN Grade;

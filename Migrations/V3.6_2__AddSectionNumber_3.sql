@@ -1,0 +1,1 @@
+ALTER TABLE Courses ADD CONSTRAINT UC_Course UNIQUE (`Number`,Dept,`Year`,`Quarter`,`Section`);

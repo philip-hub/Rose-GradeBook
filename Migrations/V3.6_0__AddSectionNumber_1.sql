@@ -1,0 +1,1 @@
+ALTER TABLE Courses ADD Section VARCHAR(5) NULL;

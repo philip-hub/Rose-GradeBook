@@ -1,2 +1,1 @@
-ALTER TABLE CourseComments
-DROP CONSTRAINT Positive_Likes
+ALTER TABLE CourseComments DROP CONSTRAINT Positive_Likes;

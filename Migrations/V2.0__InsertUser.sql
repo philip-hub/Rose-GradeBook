@@ -1,97 +1,61 @@
 -- returns userID
-CREATE FUNCTION insertUser (email varchar(35),username varchar(10),password varchar(50),gpa float, standing varchar(10),isadmin bit,majors varchar(150),validationcode CHAR(4))
-AS
-BEGIN
-BEGIN TRANSACTION
+-- DROP PROCEDURE insertUser
 
-DECLARE expr1 INT;
-DECLARE expr2 INT;
-DECLARE expr3 INT;
+DELIMITER //
+CREATE PROCEDURE insertUser (IN email varchar(35), IN username varchar(10), IN password varchar(50), IN gpa float, IN  standing varchar(10), IN isadmin bit, IN majors varchar(150), IN validationcode CHAR(4))
+proc: BEGIN
+	START TRANSACTION;
+	
+	SET @expr1 = (SELECT COUNT(*) FROM Users WHERE Email=email);
+	
+	SET @expr2 = (SELECT IsValidated FROM Users WHERE Email=email);
+	
+	IF @expr1 > 0 THEN
+	    IF @expr2 = 1 THEN
+	    ROLLBACK;
+			SET @temp = -1;
+	        select @temp;
+			LEAVE proc;
+	    END IF;
+	    SET @userid = (SELECT UserID FROM Users WHERE Email=email);
+	    DELETE FROM UserMajors WHERE UserID=@userid;
+	    DELETE FROM UserSignups WHERE UserID=@userid;
+	    DELETE FROM Users WHERE Email=email;
+	END IF;
 
-IF ((SELECT COUNT(*) FROM Users WHERE Email=email) > 0)
-BEGIN
+	INSERT INTO Users VALUES (email,username,password,standing,isadmin,0,gpa);
 
-    IF ((SELECT IsValidated FROM Users WHERE Email=email) = 1)
-    BEGIN
-    ROLLBACK TRANSACTION;
-    RETURN(4);
-    END
+    SET @userid = (SELECT LAST_INSERT_ID());
 
-    SET userid = (SELECT UserID FROM Users WHERE Email=email)
+	INSERT INTO UserSignups VALUES (@userid,validationcode);
+	
+	SET @idx = 0;
+	SET @majors_length = (LENGTH(majors));
+	
+	WHILE @idx <= @majors_length DO -- <= cuz 1-dexed
+	    SET @nexMatch = (SELECT LOCATE(";", majors, @idx+1));
+	    IF @nexMatch = 0 THEN -- not found
+	        SET @nexMatch = @majors_length+1;
+	    END IF;
+	
+		SET @major_str = (SELECT SUBSTRING(majors,@idx+1,@nexMatch-@idx-1));
+	
+--		 INSERT INTO majors_split VALUES (@major_str);
+    SET @worked=(insertUserMajor(@userid,major_str));
 
-    DELETE FROM UserMajors WHERE UserID=userid; 
-    IF (ERROR <> 0)
-    BEGIN
-    ROLLBACK TRANSACTION;
-    RETURN(5);
-    END
-    DELETE FROM UserSignups WHERE UserID=userid; 
-    IF (ERROR <> 0)
-    BEGIN
-    ROLLBACK TRANSACTION;
-    RETURN(6);
-    END
-    DELETE FROM Users WHERE Email=email; 
-    IF (ERROR <> 0)
-    BEGIN
-    ROLLBACK TRANSACTION;
-    RETURN(7);
-    END
+	
+	    IF @worked != 0 THEN -- not found
+	    	ROLLBACK;
+			SET @temp = -1;
+	        select @temp;
+			LEAVE proc;
+	    END IF; 
+		
+	    SET @idx = @nexMatch;
+	END WHILE;
 
-END
+COMMIT;
 
-DECLARE separator varchar(1)=';'
-DECLARE majors_split TABLE
-([value] varchar(50),
-ordinal int)
-
-Insert into  majors_split([value],ordinal) select [value], ROW_NUMBER() OVER (
-            ORDER BY [value]
-            ) ordinal from STRING_SPLIT(majors,separator);
-
-DECLARE numMajors int;
-SET numMajors=(SELECT COUNT(*) FROM majors_split);
-
-IF (numMajors > 3) -- Max number of majors
-BEGIN
-ROLLBACK TRANSACTION;
-RETURN(3);
-END
-
-INSERT INTO Users VALUES (email,username,password,standing,isadmin,0,gpa);
-IF (ERROR <> 0)
-BEGIN
-ROLLBACK TRANSACTION;
-RETURN(1);
-END
-
-SET userid = IDENTITY;
-
-DECLARE	return_value int
-DECLARE counter INT = 1;
-WHILE counter <= numMajors
-BEGIN
-    DECLARE major_str varchar(50);
-    SET major_str=(SELECT [value] from majors_split where ordinal=counter);
-
-    EXEC	return_value = insertUserMajor userid = userid, major = major_str;
-    IF (return_value <> 0)
-    BEGIN
-        ROLLBACK TRANSACTION;
-        RETURN(2);
-    END
-    
-    SET counter = counter + 1;
-END;
-
-INSERT INTO UserSignups VALUES (userid,validationcode);
-IF (ERROR <> 0)
-BEGIN
-ROLLBACK TRANSACTION;
-RETURN(5);
-END
-
-COMMIT TRANSACTION
-RETURN(0);
-END
-GO
+select @userid;
+   END//
+DELIMITER ;

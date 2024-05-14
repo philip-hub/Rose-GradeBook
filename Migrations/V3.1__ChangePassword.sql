@@ -1,18 +1,18 @@
+DELIMITER //
+CREATE FUNCTION changePassword(pword varchar(50), userid int, newPassword varchar(50))
+   RETURNS INT
+   DETERMINISTIC
+   BEGIN
 
-CREATE OR ALTER PROCEDURE changePassword(@password varchar(50), @userid int, @newPassword varchar(50))
-AS
-BEGIN
+SET @matches=(SELECT COUNT(*) FROM Users WHERE UserID=userid AND `Password`=pword);
 
-DECLARE @matches int;
-SET @matches=(SELECT COUNT(*) FROM Users WHERE UserID=@userid AND [Password]=@password)
+IF @matches <> 1 THEN
+	RETURN(1);
+END IF;
 
-IF (@matches <> 1)
-BEGIN
-RETURN(1);
-END
-
-UPDATE Users SET [Password]=@newPassword WHERE UserID=@userid AND [Password]=@password
+UPDATE Users SET `Password`=newPassword WHERE UserID=userid AND `Password`=pword;
 
 RETURN(0);
-END
-GO
+END//
+
+DELIMITER ;

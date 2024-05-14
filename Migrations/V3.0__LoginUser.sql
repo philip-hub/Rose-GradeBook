@@ -1,45 +1,40 @@
+DELIMITER //
+CREATE FUNCTION loginUser(email varchar(35), username varchar(10), pword varchar(50))
+   RETURNS INT
+   DETERMINISTIC
+   BEGIN
 
-CREATE OR ALTER PROCEDURE loginUser(@email varchar(35), @username varchar(10), @password varchar(50), @userid int output)
-AS
-BEGIN
+SET @matching = 0;
+SET @userid = 0;
 
-DECLARE @matching int;
+IF (ISNULL(email) AND ISNULL(username)) THEN
+   RETURN(-1);
+END IF;
+IF (NOT ISNULL(email) AND NOT ISNULL(username)) THEN
+	SET @matching=(SELECT COUNT(*) FROM Users WHERE Email=email AND Username=username AND `Password`=pword);
+END IF;
+IF (ISNULL(email) AND NOT ISNULL(username)) THEN
+	SET @matching=(SELECT COUNT(*) FROM Users WHERE Email=email AND `Password`=pword);
+END IF;
+IF (NOT ISNULL(email) AND ISNULL(username)) THEN
+	SET @matching=(SELECT COUNT(*) FROM Users WHERE Username=username AND `Password`=pword);
+END IF;
 
-IF (@email is null AND @username is null)
-BEGIN
-RETURN(1);
-END
-IF (@email is not null AND @username is not null)
-BEGIN
-SET @matching=(SELECT COUNT(*) FROM Users WHERE Email=@email AND Username=@username AND [Password]=@password)
-END
-IF (@email is null AND @username is not null)
-BEGIN
-SET @matching=(SELECT COUNT(*) FROM Users WHERE Email=@email AND [Password]=@password)
-END
-IF (@email is not null AND @username is null)
-BEGIN
-SET @matching=(SELECT COUNT(*) FROM Users WHERE Username=@username AND [Password]=@password)
-END
+IF @matching != 1 THEN
+	RETURN(-2);
+END IF;
 
-IF (@matching <> 1)
-BEGIN
-RETURN(2);
-END
+IF (NOT ISNULL(email) AND NOT ISNULL(username)) THEN
+	SET @userid=(SELECT UserID FROM Users WHERE Email=email AND Username=username AND `Password`=pword);
+END IF;
+IF (ISNULL(email) AND NOT ISNULL(username)) THEN
+	SET @userid=(SELECT UserID FROM Users WHERE Email=email AND `Password`=pword);
+END IF;
+IF (NOT ISNULL(email) AND ISNULL(username)) THEN
+	SET @userid=(SELECT UserID FROM Users WHERE Username=username AND `Password`=pword);
+END IF;
 
-IF (@email is not null AND @username is not null)
-BEGIN
-SET @userid=(SELECT UserID FROM Users WHERE Email=@email AND Username=@username AND [Password]=@password)
-END
-IF (@email is null AND @username is not null)
-BEGIN
-SET @userid=(SELECT UserID FROM Users WHERE Email=@email AND [Password]=@password)
-END
-IF (@email is not null AND @username is null)
-BEGIN
-SET @userid=(SELECT UserID FROM Users WHERE Username=@username AND [Password]=@password)
-END
+RETURN(@userid);
+END//
 
-RETURN(0);
-END
-GO
+DELIMITER ;
