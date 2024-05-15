@@ -2,6 +2,10 @@
   - SPROCS to functions
     - So SQL Server has sprocs with output params and return values; you have to choose between them for MySQL/MariaDB
       - Any nonnegative return value will be success now; any negative failure
+    - There are no table valued variables in MySQL
+      - Prepare the statement and then insert into temporary table
+      - Or use the load file: https://mariadb.com/kb/en/load-data-infile/
+        - Ye prolly that one into a temp table, then do an insert into select
   - New Node package
     - https://www.npmjs.com/package/mariadb
   - Test changes in DBFiddle
