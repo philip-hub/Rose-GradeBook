@@ -1,1 +1,1 @@
-ALTER TABLE Takes DROP CONSTRAINT UC_UserCourse;
+-- Cut off at the stem, changed 1.2

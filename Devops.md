@@ -6,6 +6,7 @@
       - Prepare the statement and then insert into temporary table
       - Or use the load file: https://mariadb.com/kb/en/load-data-infile/
         - Ye prolly that one into a temp table, then do an insert into select
+        - Gotta make sure to enable local file loading in the connection, see image
   - New Node package
     - https://www.npmjs.com/package/mariadb
   - Test changes in DBFiddle
