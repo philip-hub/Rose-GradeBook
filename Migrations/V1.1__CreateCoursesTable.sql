@@ -6,7 +6,6 @@ CREATE TABLE Courses (
   `Number` VARCHAR(10) NOT NULL,
   `Year` DATE NOT NULL,
   `Quarter` VARCHAR(10) NOT NULL,
-  CONSTRAINT UC_Course UNIQUE (`Number`,Dept,`Year`,`Quarter`),
   CONSTRAINT Valid_Quarter CHECK( `Quarter` in ('Fall','Winter','Spring','Summer')),
  PRIMARY KEY(CourseID)
 )

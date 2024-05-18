@@ -1,5 +1,5 @@
 DELIMITER //
-CREATE PROCEDURE insertUser ()
+CREATE PROCEDURE getSectionIDs ()
 BEGIN
 
 CREATE TEMPORARY TABLE review_data ( 
@@ -11,7 +11,7 @@ CREATE TEMPORARY TABLE review_data (
 
 -- https://stackoverflow.com/questions/1641160/how-to-load-data-infile-on-amazon-rds
 LOAD DATA LOCAL INFILE '/tmp/review_data.txt'
-INTO TABLE review
+INTO TABLE review_data
 FIELDS TERMINATED BY '|';
 
 SELECT (
@@ -27,6 +27,6 @@ SELECT (
     ORDER BY c.CourseID DESC LIMIT 1
     )
 as SectionID
-FROM review_data 
+FROM review_data;
 END//
 DELIMITER ;
