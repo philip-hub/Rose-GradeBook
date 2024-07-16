@@ -12,6 +12,8 @@
   - Test changes in DBFiddle
     - https://dbfiddle.uk/yPPKkZV-
 - Reduce Cloud Costs for DB
+  - Right now it's $80/month w no users
+  - Try MySQL RDS, if that's no good we can try EC2 or just buying a cheap DB Server for like $200
 - Make AMI
       - TODO: Follow from [ASSOCIATESHARED] [DEMO] Creating an Animals4life AMI - PART 1 onwards in the creation of the DB server
       - Based on the descriptions, it seems like AMI would be good for both DB and any horizontal scaling
