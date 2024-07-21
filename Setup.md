@@ -1,59 +1,15 @@
 
-# DBUser=mariadb user
-# DBPassword=password for the mariadb user
-# DBRootPassword = root password for mariadb
+# STEP 1 - Node.js version
+Run brew list, uninstall any node and or any specific node versions with brew uninstall --force node
 
-# STEP 1 - Configure Authentication Variables which are used below
-DBUser='gaurav'
-DBPassword='mavsinfive'
-DBRootPassword='mavsinfive'
+Delete any node-related stuff from path if it's still there
 
-# STEP 2 change password and shit to DBRootPassword, default choices fine allegedly
+Run brew install nvm
 
-sudo dnf install mariadb105-server
+If you don't already have a ~/.zshrc file, create one
 
-sudo systemctl start mariadb
-sudo systemctl status mariadb
-sudo systemctl enable mariadb
+Add this line to it: source ~/.nvm/nvm.sh
 
-# enter same password as dbrootpassword ig, say no to things you dont understand yes to what sounds good
-sudo mysql_secure_installation
+Run nvm use 22 (run nvm install 22 if v22 is not yet installed)
 
-# STEP 3 - Log in
-sudo mysql -u root -p --password=$DBRootPassword
-
-# STEP 7 Set up remote user - fill in the constants (leave single quotes I think) don't actually use these commands
-
-CREATE USER '$DBUser'@'%' IDENTIFIED BY '$DBPassword';
-
-# the % is super important, allows from all locations the user to connect from
-
-GRANT ALL PRIVILEGES ON *.* TO '$DBUser'@'%' WITH GRANT OPTION;
-
-# changes mean we restart = flush privs
-
-FLUSH PRIVILEGES;
-
-# Step 9 - Funtivities
-
-sudo dnf install -y cowsay
-
-cowsay "oh hi"
-
-# Step 10 to ensure it's listening on 3306
-
- netstat -tlnp
-
-===== On the client side =====
-
-# Step 11 check that connection is in order
-
-brew services start mariadb
-
-mariadb -h [insert elastic ip] -u [$DBUser] -p [$DBPassword]
-
-# Step 12 connect using rdbms
-
-On mac, use tableplus (see image for example config)
-
-On windows, use heidisql or maybe also tableplus
+Try running npm run start in /Server/package.json

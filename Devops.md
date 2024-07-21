@@ -1,3 +1,6 @@
+- Frontend-Backend Connection
+  - Will just separately host them and make calls to the backend
+  - Enable only requests from the frontend domain to the backend domain via HTTP headers or NACL or sumn
 - SQL Server to MySQL
   - SPROCS to functions
     - So SQL Server has sprocs with output params and return values; you have to choose between them for MySQL/MariaDB
@@ -13,8 +16,11 @@
     - https://dbfiddle.uk/yPPKkZV-
 - Reduce Cloud Costs for DB
 - Make AMI
-      - TODO: Follow from [ASSOCIATESHARED] [DEMO] Creating an Animals4life AMI - PART 1 onwards in the creation of the DB server
+      - TODO: Follow from [ASSOCIATESHARED][DEMO] Splitting Wordpress Monolith => APP & DB when setting up web server separate from DB
+        - However, just use RDS for the MySQL DB once in prod. The backups will make it much easier
       - Based on the descriptions, it seems like AMI would be good for both DB and any horizontal scaling
+  - Use EFS for the file system with EC2 used to run this, will make horizontal scaling chill cause they can all use same files whilee not at risk of losing thdm if there's a crash
+    -  see demo lesson also efs vs s3 vs ebs: https://aws.amazon.com/efs/when-to-choose-efs/
 - SSH
   - https://stackoverflow.com/questions/25869207/getting-warning-unprotected-private-key-file-error-message-while-attempting
 - Download MariaDB and connect from mac with TablePlus

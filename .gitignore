@@ -1,3 +1,5 @@
 Server/node_modules/
 Server/connectivity_config.json
 Server/email_config.json
+.DS_Store
+Migrations/.DS_Store
