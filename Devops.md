@@ -10,8 +10,11 @@
       - Or use the load file: https://mariadb.com/kb/en/load-data-infile/
         - Ye prolly that one into a temp table, then do an insert into select
         - Gotta make sure to enable local file loading in the connection, see image
-  - New Node package
+  - Database Connectivity (choose whichever one minimizes refactoring)
     - https://www.npmjs.com/package/mariadb
+    - Or Knex: 
+      - https://knexjs.org/
+    - It looks like MariaDB is for the best; has a similar enough promise API that I can hopefully translate more or less
   - Test changes in DBFiddle
     - https://dbfiddle.uk/yPPKkZV-
 - Reduce Cloud Costs for DB
