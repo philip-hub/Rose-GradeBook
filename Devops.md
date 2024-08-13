@@ -20,6 +20,7 @@
 - Reduce Cloud Costs for DB
   - Right now it's $80/month w no users
   - Try MySQL RDS, if that's no good we can try EC2 or just buying a cheap DB Server for like $200
+    - Getting high availability out of a home server is out of the scope of this project, refactoring is currently the main option
 - Make AMI
       - TODO: Follow from [ASSOCIATESHARED][DEMO] Splitting Wordpress Monolith => APP & DB when setting up web server separate from DB
         - However, just use RDS for the MySQL DB once in prod. The backups will make it much easier
