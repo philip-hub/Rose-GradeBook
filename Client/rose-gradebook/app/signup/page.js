@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useRouter } from "next/router";
-import styles from '../styles/Form.module.css'; // Assuming a CSS module is used for styles
+import styles from '../Form.module.css'; // Assuming a CSS module is used for styles
 
 const SignupPage = () => {
   const [username, setUsername] = useState("");

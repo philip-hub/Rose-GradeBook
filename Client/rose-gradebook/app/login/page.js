@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import styles from '../styles/Form.module.css'; // Assuming a CSS module is used for styles
+import styles from '../Form.module.css'; // Assuming a CSS module is used for styles
 
 const LoginPage = () => {
   const [email, setEmail] = useState("");
