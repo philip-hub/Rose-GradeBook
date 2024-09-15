@@ -1,32 +1,32 @@
-DELIMITER //
-CREATE PROCEDURE getSectionIDs ()
-BEGIN
-
-CREATE TEMPORARY TABLE review_data ( 
+CREATE TYPE ReviewData AS TABLE ( 
   Pf VARCHAR(100), -- professor
   Yr Date, -- year
   Qr varchar(10), -- quarter
   Cr varchar(20) -- courseDeptAndNumber
-);
+)
 
--- https://stackoverflow.com/questions/1641160/how-to-load-data-infile-on-amazon-rds
-LOAD DATA LOCAL INFILE '/tmp/review_data.txt'
-INTO TABLE review_data
-FIELDS TERMINATED BY '|';
+--https://www.mssqltips.com/sqlservertip/1483/using-table-valued-parameters-tvp-in-sql-server/
+GO
 
+-- use new tech to match on four fields, esp professor name
+CREATE OR ALTER PROCEDURE getSectionIDs
+@review_data ReviewData READONLY
+AS
+BEGIN
 SELECT (
-    SELECT CourseID FROM Courses c
+    SELECT TOP 1 CourseID FROM Courses
     WHERE Pf LIKE
-        (CASE WHEN LOCATE('.', Professor) <> 0
-        THEN SUBSTRING(Professor, 0, LOCATE('.', Professor)-2)
-        ELSE SUBSTRING(Professor, 0, LOCATE('(', Professor)-1)
+        (CASE WHEN CHARINDEX('.', Professor) <> 0
+        THEN SUBSTRING(Professor, 0, CHARINDEX('.', Professor)-2)
+        ELSE SUBSTRING(Professor, 0, CHARINDEX('(', Professor)-1)
         END)+'%'
-        AND Yr = c.Year
-        AND Qr = c.Quarter
-        AND Cr LIKE c.CourseDeptAndNumber+'%' -- none of this was null so no need for null check
-    ORDER BY c.CourseID DESC LIMIT 1
+        AND Yr = [Year]
+        AND Qr = [Quarter]
+        AND Cr LIKE CourseDeptAndNumber+'%' -- none of this was null so no need for null check
+    ORDER BY CourseID DESC
     )
 as SectionID
-FROM review_data;
-END//
-DELIMITER ;
+FROM @review_data 
+END
+GO
+

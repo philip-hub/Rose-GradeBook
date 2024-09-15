@@ -5,6 +5,7 @@ CREATE TABLE Takes (
   UserID INT NOT NULL FOREIGN KEY References Users(UserID),
   Grade varchar(2) NULL, -- Only populate if the grade is something we can calculate the avg with
   Professor VARCHAR(50) NOT NULL,
-  CourseID INT NOT NULL FOREIGN KEY References Courses(CourseID)
+  CourseID INT NOT NULL FOREIGN KEY References Courses(CourseID),
+  CONSTRAINT UC_UserCourse UNIQUE (UserID,CourseID)
   -- Constraint so we can say; please enter one grade per course
 )

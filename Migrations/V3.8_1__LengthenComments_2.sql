@@ -1,1 +1,0 @@
-ALTER TABLE CourseComments ADD `Comment` VARCHAR(1000) NULL;

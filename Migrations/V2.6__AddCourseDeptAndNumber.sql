@@ -1,1 +1,2 @@
-ALTER TABLE Courses ADD CourseDeptAndNumber VARCHAR(20) NULL;
+ALTER TABLE Courses
+ADD CourseDeptAndNumber VARCHAR(20) NULL;

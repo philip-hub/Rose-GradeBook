@@ -1,1 +1,0 @@
-ALTER TABLE Courses ADD Professor VARCHAR(100) NULL;

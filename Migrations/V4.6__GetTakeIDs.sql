@@ -1,19 +1,28 @@
-CREATE PROCEDURE getTakeIDs (numRows int)
-BEGIN
+CREATE TYPE GradeDataAndSectionIDs AS TABLE ( 
 
-CREATE TEMPORARY TABLE grade_data_and_section_data ( 
   Sd int, -- sectionid
   Ge float -- grade
-);
+)
+
+--https://www.mssqltips.com/sqlservertip/1483/using-table-valued-parameters-tvp-in-sql-server/
+GO
+-- use new tech to match on four fields, esp professor name
+CREATE OR ALTER PROCEDURE getTakeIDs
+(@data GradeDataAndSectionIDs READONLY,
+@numRows int)
+AS
+BEGIN
+
 
 SELECT (
-    SELECT TakeID FROM Takes
+  
+  SELECT TakeID FROM Takes
   WHERE 
-    TakeID IN (SELECT TakeID FROM Takes ORDER BY TakeID DESC LIMIT (numRows))
+    TakeID IN (SELECT TOP (@numRows) TakeID FROM Takes ORDER BY TakeID DESC)
     AND Sd=CourseID
     AND (Ge=Grade OR (Ge is null and Grade is null))
     )
 as TakeID
-FROM grade_data_and_section_data;
-END//
-DELIMITER ;
+FROM @data 
+END
+GO

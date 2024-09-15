@@ -1,27 +1,26 @@
-CREATE FUNCTION insertTakesUnique ()
-RETURNS INT
-DETERMINISTIC
-BEGIN
-
-CREATE TEMPORARY TABLE take_data ( 
+CREATE TYPE TakeData AS TABLE ( 
   Ud int,
   Cd int,
   Ge FLOAT
-);
+)
+GO
 
--- https://stackoverflow.com/questions/1641160/how-to-load-data-infile-on-amazon-rds
-LOAD DATA LOCAL INFILE '/tmp/take_data.txt'
-INTO TABLE take_data
-FIELDS TERMINATED BY '|';
+CREATE OR ALTER PROCEDURE InsertTakesUnique
+(@take_data TakeData READONLY, @numRows INT OUTPUT)
+AS
+BEGIN
 
 INSERT INTO Takes
 SELECT DISTINCT Ud,Cd,Ge
-FROM take_data
+FROM @take_data
 END
+SET @numRows = (SELECT @@ROWCOUNT);
 
--- https://stackoverflow.com/questions/2229218/does-mysql-have-an-equivalent-to-rowcount-like-in-mssql
-SET @numRows = (SELECT ROW_COUNT());
+IF @@ERROR <> 0 
+BEGIN
+RETURN(1);
+END
+-- 
+RETURN(0);
 
-RETURN(@numRows);
-END//
-DELIMITER ;
+GO

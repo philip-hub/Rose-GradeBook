@@ -1,1 +1,2 @@
--- Cut off at the stem, changed 1.2
+ALTER TABLE Takes
+DROP CONSTRAINT UC_UserCourse;

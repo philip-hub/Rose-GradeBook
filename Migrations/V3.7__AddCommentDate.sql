@@ -1,1 +1,2 @@
-ALTER TABLE CourseComments ADD CommentDate DATE NOT NULL;
+ALTER TABLE CourseComments
+ADD CommentDate DATE NOT NULL;

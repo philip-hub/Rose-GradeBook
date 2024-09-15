@@ -1,10 +1,4 @@
-DELIMITER //
-CREATE FUNCTION insertSectionsUnique ()
-   RETURNS INT
-   DETERMINISTIC
-   BEGIN
-
-CREATE TEMPORARY TABLE section_data ( 
+CREATE TYPE SectionData AS TABLE ( 
   Ne VARCHAR(100),
   Dt VARCHAR(10),
   Cs int,
@@ -14,12 +8,13 @@ CREATE TEMPORARY TABLE section_data (
   Qr varchar(10),
   Cr varchar(20),
   Sn varchar(5)
-);
+)
+GO
 
--- https://stackoverflow.com/questions/1641160/how-to-load-data-infile-on-amazon-rds
-LOAD DATA LOCAL INFILE '/tmp/section_data.txt'
-INTO TABLE section_data
-FIELDS TERMINATED BY '|';
+CREATE OR ALTER PROCEDURE insertSectionsUnique
+@section_data SectionData READONLY
+AS
+BEGIN
 
 INSERT INTO Courses
 SELECT DISTINCT --order gotta match
@@ -32,8 +27,15 @@ SELECT DISTINCT --order gotta match
   Pr,
   Cr,
   Sn
-FROM section_data;
+FROM @section_data
+END
 
+IF @@ERROR <> 0 
+BEGIN
+RETURN(1);
+END
 RETURN(0);
-END//
-DELIMITER ;
+
+GO
+
+sp_help courses
