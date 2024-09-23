@@ -1,19 +1,20 @@
-"use client";
-import React, { useState } from "react";
-import { useRouter } from "next/router";
+"use client"
+import { useRouter } from 'next/navigation'
+import react from "react";
 import styles from '../Form.module.css'; // Assuming a CSS module is used for styles
 
-const SignupPage = () => {
-  const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
-  const router = useRouter(); // Using Next.js router
-  const [gpa, setGPA] = useState("");
-  const [standing, setStanding] = useState("");
-  const [major, setMajor] = useState("");
+export default function Home() {
+  const router = useRouter();
 
+  const [username, setUsername] = react.useState("");
+  const [email, setEmail] = react.useState("");
+  const [password, setPassword] = react.useState("");
+  const [confirmPassword, setConfirmPassword] = react.useState("");
+  const [errorMessage, setErrorMessage] = react.useState("");
+  // const router = react.useRouter(); // Using Next.js router
+  const [gpa, setGPA] = react.useState("");
+  const [standing, setStanding] = react.useState("");
+  const [major, setMajor] = react.useState("");
   const handleSignup = (e) => {
     e.preventDefault();
     // Validate email domain
@@ -109,12 +110,9 @@ const SignupPage = () => {
           />
         </div>
 
-        
         {errorMessage && <p className={styles.error}>{errorMessage}</p>}
         <button type="submit" className={styles.button}>Sign Up</button>
       </form>
     </div>
   );
 };
-
-export default SignupPage;

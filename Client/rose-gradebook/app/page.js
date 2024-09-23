@@ -8,11 +8,9 @@ export default function Home() {
           <h1>Discovering Rose's real academic data</h1>
           <Image src={"/images/logo.png"} alt="Logo"/>
           <br></br>
-          <form method="post" action="/show_VerifyEmailForm">
+          <form method="post" action="/signup">
           <input type="submit" name="submit" value="Signup"/>
           </form>
-
-          
         </div>
       </body>
     </html>

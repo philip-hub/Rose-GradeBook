@@ -1,11 +1,11 @@
-"use client";
-import React, { useState } from "react";
+"use client"
+import react from "react";
 import styles from '../Form.module.css'; // Assuming a CSS module is used for styles
 
 const LoginPage = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
+  const [email, setEmail] = react.useState("");
+  const [password, setPassword] = react.useState("");
+  const [errorMessage, setErrorMessage] = react.useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
