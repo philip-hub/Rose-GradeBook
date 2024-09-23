@@ -138,7 +138,7 @@ let comments = [];
         console.log("course: "+reviews[i].course);
         console.log("check the dept isn't too long or unrecognized, if not add it");
          console.log("If there's an error here add it only up to the length of 10 in the JSON");
-         console.log("Really should only happen with the number ones (starting with #s) so we have a list to keep track of them\n Older ones are either definitely the dept prefix or legacy");
+         console.log("Really should only happen with the number ones to keep track of them");
       }
       sections.push(created);
     }

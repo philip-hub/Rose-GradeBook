@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import styles from '../Form.module.css'; // Assuming a CSS module is used for styles
 

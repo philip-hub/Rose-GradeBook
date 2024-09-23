@@ -8,8 +8,8 @@ var ScrapingServices = require('./Services/ScrapingServices.js');
 router.post('/load_courses/:year', async function(req, res) {
     let curYear = ScrapingServices.thisYear();
     let months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-    
     let year = req.params.year;
+    console.log("Year: "+year);
     let sectionpath = "data/"+req.params.year+"/"+req.params.year+"_sectioninfo.json";    
     let coursepath = "data/"+req.params.year+"/"+req.params.year+"_courseinfo.json";
     let dirs_exists = fs.existsSync(coursepath) && fs.existsSync(sectionpath);
