@@ -2,21 +2,39 @@ console.log("Hello Application");
 
 var express = require('express');
 var router = express.Router();
+const session = require('express-session');
+const cookieSession = require('cookie-session');
 const fs = require("fs");
 const { DateTime } = require("luxon");
 
+// router.use(session({
+//   // domain: '.app.localhost',
+//   secret: 'your-secret-key',
+//   resave: false,
+//   saveUninitialized: true,
+//   cookie: {
+//       secure: false, // HTTPS only (set to true in production with HTTPS)
+//       httpOnly: true, // Prevent JavaScript access
+//       sameSite: 'lax', // Control cross-origin behavior
+//       maxAge: 1000 * 60 * 60 * 24 // 1 day in milliseconds
+//   }
+// }));
+
+router.use(cookieSession({
+  name: 'session',
+  keys: ['userid'],
+  // Cookie Options
+  maxAge: 24 * 60 * 60 * 1000 // 24 hours
+}));
+router.get('/', function (req, res) {
+  // req.session.userid = (!req.session.userid)?69:(req.session.userid-1);
+  console.log("User ID: "+req.session.userid);
+  res.send('Wined and dined and sixty-nined');
+})
 var bodyParser = require('body-parser');
-var session = require('express-session');
 
 router.use(bodyParser.json());
-router.use(bodyParser.urlencoded({ extended: true })); 
-router.use(session(
-  {
-    secret: 'Super secret secret',
-    cookie: {},
-    resave: false,
-    saveUninitialized: true}
-));
+router.use(bodyParser.urlencoded({ extended: true }));
 
 var ApplicationServices = require('./Services/ApplicationServices.js');
 
@@ -24,15 +42,8 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
   // This API will allow for all of the communication necessary for the frontend of OpenGradebook
 
   /*
-      12. (TODO) CRUD for comments
-      13. (TODO) Get the endpoints and error stuff done this weekend; AWS and Redis stuff is the goal this week
-          a. I think just message success and value; if it fails, pop up modal. Otherwise it does whatever success means
-      14. (TODO) Set up database data export to files or something because tsql sometimes just creates cursed tables
-          a. This way the whole thing can be reloaded in case of cursed table
-          b. https://www.sqlshack.com/importexport-data-sql-server-using-sql-server-import-export-wizard/
-          c. https://learn.microsoft.com/en-us/sql/integration-services/import-export-data/start-the-sql-server-import-and-export-wizard?view=sql-server-ver16
       15. Launch Plan Google Doc: https://docs.google.com/document/d/11ojcI6Sl3bWT0f2RV24tC7eC0SETISwn_inaGdcXilM/edit?usp=sharing
-      16. Final Featureset
+      16. Final Feature Set
         // Scrape RateMyProfessors and enter the data into here, and then provide a course view so people can see ratings by courses
           // Advertise it as us already having done that work for you, and also that the idea is that people create threads after difficult tests etc and this allows them to help others
           // Put posters up[ with different quesions, followed by try our app today at with a qr code?
@@ -88,7 +99,7 @@ var ApplicationServices = require('./Services/ApplicationServices.js');
 // Error Codes
   // 99 - Not logged in
   // Everything else just give the message directly as it appears when the success is false
-/** */
+
 // POST
 // TODO: General QA Stuff; no freezing, edge cases (thinking pagination), and slowness
 // Example: http://localhost:3000/application/take?courseid=6700&grade=3.2
@@ -108,6 +119,7 @@ router.post('/take', async function(req, res) {
 // Example: http://localhost:3000/application/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=2.49&standing=Freshman&isadmin=1&majors=Physics;Computer Science
 router.post('/signup', async function(req, res) { // use query parameters: https://www.scaler.com/topics/expressjs-tutorial/express-query-params/
   // createUser (email,username,password,gpa,standing,isadmin,majors,validationcode)
+  console.log("Kuing: "+JSON.stringify(req.query));
   let email = req.query.email;
   let username = req.query.username;
   let password = req.query.password;
@@ -115,6 +127,7 @@ router.post('/signup', async function(req, res) { // use query parameters: https
   let standing = req.query.standing;
   let isadmin = req.query.isadmin;
   let majors = req.query.majors;
+  console.log("yemail: "+email);
   
   let validationcode = ApplicationServices.generateTemporaryCode();
   let message = await ApplicationServices.createUser (email,username,password,gpa,standing,isadmin,majors,validationcode);
@@ -124,6 +137,7 @@ router.post('/signup', async function(req, res) { // use query parameters: https
     let message2 = await ApplicationServices.sendValidationEmail(email,validationcode);
     if (message2.success) {
       let userid = message.message;
+      console.log("New User ID: "+userid+" | "+Object.keys(message)+" and "+Object.values(message));
       req.session.userid = userid;
       res.send(ApplicationServices.generateMessage(true,{createUser:message.message,verificationEmail:message2.message}));
     } else {

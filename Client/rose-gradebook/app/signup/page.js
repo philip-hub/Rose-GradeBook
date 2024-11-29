@@ -2,9 +2,11 @@
 import { useRouter } from 'next/navigation'
 import react from "react";
 import styles from '../Form.module.css'; // Assuming a CSS module is used for styles
+import { useCookies } from 'react-cookie';
 
 export default function Home() {
   const router = useRouter();
+  const backendPort = 8080;
 
   const [username, setUsername] = react.useState("");
   const [email, setEmail] = react.useState("");
@@ -15,6 +17,8 @@ export default function Home() {
   const [gpa, setGPA] = react.useState("");
   const [standing, setStanding] = react.useState("");
   const [major, setMajor] = react.useState("");
+  // const [cookies, setCookie] = useCookies(['userid']);
+
   const handleSignup = (e) => {
     e.preventDefault();
     // Validate email domain
@@ -29,7 +33,50 @@ export default function Home() {
     }
     // Clear error and navigate to verification page
     setErrorMessage("");
-    router.push("/verification"); // Use Next.js's routing
+    
+    const url = new URL('http://localhost:8080/application/signup');
+
+    // Set the query parameters
+    const params = {
+      email,
+      username,
+      password,
+      gpa,
+      standing,
+      isadmin: '0',
+      majors: 'Computer Science'
+    };
+    // Append query parameters to the URL
+    Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
+    console.log("Testing fetch request: "+url);
+    let headers= {'Content-Type': 'application/x-www-form-urlencoded'};
+
+    // Make the POST request
+    fetch(url, {
+      method: 'POST', // POST method
+      headers: {
+        'Content-Type': 'application/json' // specify that we're sending JSON
+      },
+      method: 'POST',
+    credentials: 'include',
+    body: JSON.stringify({}) // Empty body since the query parameters are in the URL
+    })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json(); // Parse JSON response
+      })
+      .then(data => {
+        console.log('Success:', data);
+        if (data?.success) {
+          router.push("/verification"); // Use Next.js's routing
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+    
   };
 
   return (
