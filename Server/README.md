@@ -2,7 +2,7 @@ NOTE: If any error relating to starting a new instance being flagged as a man-in
   - Specifically use the ssh-keygen command on the IP Address or hostname (try both) you used
 
 # Backend EC2 Setup Commands
-- Boot up an Amazon Linux 2023 EC2 instance, publicly accessible via adding the default security group (all TCP allowed in and out) with an Elastic IP address assigned
+- Boot up an Amazon Linux 2023 EC2 instance, publicly accessible via adding the launch-wizard2 security group with an Elastic IP address assigned
   - Make sure the IP is associated with the api.rhatemyprofessors.com subdomain in Route53
 - (On your local machine!!) Download the following keys from the Google Drive (https://drive.google.com/drive/folders/1NdcstkfMdttkovbjSILXzMnSPisy90Pl?usp=drive_link) in a couple nested places within the Private Keys Etc. folder
   - MyKeyPair.pem

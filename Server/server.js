@@ -8,7 +8,7 @@ const http = require('http');
 var cors = require('cors');
 
 require('dotenv').config();
-const origin = 'http://'+(process.env.CLIENT_DOMAIN || "rhatemyprofessors");
+const origin = (process.env.CLIENT_DOMAIN || "https://rhatemyprofessors.com");
 const corsOptions = {
   origin,
   credentials: true
