@@ -6,7 +6,7 @@ import { useCookies } from 'react-cookie';
 
 export default function Home() {
   const router = useRouter();
-  const domain = process.env.NEXT_PUBLIC_DOMAIN || "api.rhatemyprofessors";
+  const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors";
 
   const [username, setUsername] = react.useState("");
   const [email, setEmail] = react.useState("");
@@ -34,7 +34,7 @@ export default function Home() {
     // Clear error and navigate to verification page
     setErrorMessage("");
     
-    const url = new URL('http://'+domain+'/application/signup');
+    const url = new URL(domain+'/application/signup');
 
     // Set the query parameters
     const params = {

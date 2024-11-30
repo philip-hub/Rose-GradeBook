@@ -8,10 +8,11 @@ export default function Home() {
   const router = useRouter();
   const [verificationCode, setVerificationCode] = react.useState("");
   // const [cookies, setCookie] = useCookies(['userid']);
+  const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors";
 
   const handleVerify = (e) => {
     e.preventDefault();
-    const url = new URL('http://localhost:8080/application/validate_user');
+    const url = new URL(domain+'/application/validate_user');
 
     // Set the query parameters
     const params = {
