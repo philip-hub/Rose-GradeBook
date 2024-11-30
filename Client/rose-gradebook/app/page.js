@@ -1,8 +1,14 @@
 "use client";
 
 import Image from "next/image";
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
+  const router = useRouter();
+  const redirectSignup = () => {
+    router.push("/signup");
+  }
+
   return (
     <div className="container">
           <h1>Discovering Rose's real academic data</h1>
@@ -12,9 +18,7 @@ export default function Home() {
            width={400}
            height={400}/>
           <br></br>
-          <form method="post" action="/signup">
-          <input type="submit" name="submit" value="Signup"/>
-          </form>
+          <button onClick={redirectSignup}>Signup</button>
         </div>
   );
 }
