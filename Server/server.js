@@ -6,9 +6,12 @@ const path = require('path');
 const bodyParser = require('body-parser');
 const http = require('http');
 var cors = require('cors');
+
+require('dotenv').config();
+const origin = 'http://'+(process.env.CLIENT_DOMAIN || "rhatemyprofessors");
 const corsOptions = {
-  origin: 'http://localhost:3000', // Change to your frontend's URL
-  credentials: true, // Allow credentials (cookies, authorization headers, etc.)
+  origin,
+  credentials: true
 };
 app.use(cors(corsOptions));
 
