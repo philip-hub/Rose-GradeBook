@@ -6,7 +6,7 @@ import { useCookies } from 'react-cookie';
 
 export default function Home() {
   const router = useRouter();
-  const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors";
+  const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors.com";
 
   const [username, setUsername] = react.useState("");
   const [email, setEmail] = react.useState("");

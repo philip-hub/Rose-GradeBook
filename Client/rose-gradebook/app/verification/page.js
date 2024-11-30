@@ -8,7 +8,7 @@ export default function Home() {
   const router = useRouter();
   const [verificationCode, setVerificationCode] = react.useState("");
   // const [cookies, setCookie] = useCookies(['userid']);
-  const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors";
+  const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors.com";
 
   const handleVerify = (e) => {
     e.preventDefault();

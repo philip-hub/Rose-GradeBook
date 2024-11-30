@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+NOTE: If any error relating to starting a new instance being flagged as a man-in-the-middle attack, see this: https://serverfault.com/questions/321167/add-correct-host-key-in-known-hosts-multiple-ssh-host-keys-per-hostname
+  - Specifically use the ssh-keygen command on the IP Address or hostname (try both) you used
 
-## Getting Started
+# Frontend Setup Commands
+- Boot up an Amazon Linux 2023 (amazon/al2023-ami-2023.6.20241121.0-kernel-6.1-x86_64) EC2 instance, publicly accessible via adding the default security group (all TCP allowed in and out) with an Elastic IP address assigned
+  - Make sure the IP is associated with the rhatemyprofessors.com domain in Route53
+- (On your local machine!!) Download the following keys from the Google Drive (https://drive.google.com/drive/folders/1NdcstkfMdttkovbjSILXzMnSPisy90Pl?usp=drive_link) in a couple nested places within the Private Keys Etc. folder
+  - OpenGradebook1.pem
+  - The following under the SSH Stuff subfolder
+    - generated-private-key.txt
+    - gd_bundle-g2-g1.crt
+    - 934657c5454f0e53.pem
+    - 934657c5454f0e53.crt
+- (On your local machine!!) Navigate to downloads
+- (On your local machine!!) Run the following (change the corresponding key, user, and URL to match the example SSH connection command): 
+scp -i "OpenGradebook1.pem" generated-private-key.txt ec2-user@ec2-3-83-151-198.compute-1.amazonaws.com:~/
+scp -i "OpenGradebook1.pem" gd_bundle-g2-g1.crt ec2-user@ec2-3-83-151-198.compute-1.amazonaws.com:~/
+scp -i "OpenGradebook1.pem" 934657c5454f0e53.pem ec2-user@ec2-3-83-151-198.compute-1.amazonaws.com:~/
+scp -i "OpenGradebook1.pem" 934657c5454f0e53.crt ec2-user@ec2-3-83-151-198.compute-1.amazonaws.com:~/
+- SSH into the EC2 instance
+- Install git
+- Install nvm
+  - Don’t forget to copy the stuff at the end of the install printing into the end of your ~/.bash_profile and run the following: 
+  - Then refresh the bash_profile
+    -  source ~/.bash_profile
+- Install Node.js v22.9.0 with nvm
+  - nvm install 22.9.0
+- Clone the repo to the root directory
+- Go to /home/ec2-user/Rose-GradeBook/Client/rose-gradebook
+  - Run the following: 
+    - npm install
+    - rm .env
+      - This is only for local development; deleting allows server cookies
+- Install pm2
+  - npm install pm2 -g
+- Run the server
+  - pm2 start "npm run dev" --name frontend
+- Debugging
+  - To test that this is working, try curling some endpoints from the localhost port (probably 3000) that should be running
+    - Should return the corresponding HTML
+  - To restart/stop the command: 
+    - pm2 restart frontend
+    - pm2 stop frontend
+  - To list all running pm2 processes: 
+    - pm2 ls
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- Install nginx
+  - sudo yum install nginx
+- Make the following directories: /etc/pki/nginx/ and /etc/pki/nginx/private/
+  - You gotta sudo
+- Run the following to add the SSL certification and key necessary for HTTPS: 
+sudo cp ~/934657c5454f0e53.crt /etc/pki/nginx/server.crt
+sudo cp ~/generated-private-key.txt /etc/pki/nginx/private/server.key
+- Copy in /etc/nginx/nginx.conf from the nginx.conf file in this directory
+- Run and enable nginx
+  - sudo systemctl start nginx
+  - sudo systemctl enable nginx
+- Debugging
+  - To test that this is working, try curling some endpoints from the now publicly exposed URLs
+  - To restart/stop the daemon: 
+    - sudo systemctl restart nginx
+    - sudo systemctl stop nginx
