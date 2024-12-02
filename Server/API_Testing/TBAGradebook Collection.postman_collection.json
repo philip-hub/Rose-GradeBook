@@ -1,0 +1,136 @@
+{
+	"info": {
+		"_postman_id": "4703fb1a-5018-4593-8818-f8e6713a350e",
+		"name": "TBAGradebook Collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "27229012"
+	},
+	"item": [
+		{
+			"name": "Import",
+			"item": [
+				{
+					"name": "Load Courses",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseurl}}/{{import}}/load_courses/2024",
+							"host": [
+								"{{baseurl}}"
+							],
+							"path": [
+								"{{import}}",
+								"load_courses",
+								"2024"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Load Comments",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseurl}}/{{import}}/load_comments/15?fromAllScrape=true",
+							"host": [
+								"{{baseurl}}"
+							],
+							"path": [
+								"{{import}}",
+								"load_comments",
+								"15"
+							],
+							"query": [
+								{
+									"key": "fromAllScrape",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Application",
+			"item": [
+				{
+					"name": "Sign Up",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseurl}}/{{application}}/signup?email=gauravsg2004@gmail.com&username=p&password=p&gpa=2.49&standing=Freshman&isadmin=1&majors=Physics;Computer Science",
+							"host": [
+								"{{baseurl}}"
+							],
+							"path": [
+								"{{application}}",
+								"signup"
+							],
+							"query": [
+								{
+									"key": "email",
+									"value": "gauravsg2004@gmail.com"
+								},
+								{
+									"key": "username",
+									"value": "p"
+								},
+								{
+									"key": "password",
+									"value": "p"
+								},
+								{
+									"key": "gpa",
+									"value": "2.49"
+								},
+								{
+									"key": "standing",
+									"value": "Freshman"
+								},
+								{
+									"key": "isadmin",
+									"value": "1"
+								},
+								{
+									"key": "majors",
+									"value": "Physics;Computer Science"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{baseurl}}/{{application}}/validate_user?validationcode=2648",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{baseurl}}/{{application}}/validate_user?validationcode=2648",
+							"host": [
+								"{{baseurl}}"
+							],
+							"path": [
+								"{{application}}",
+								"validate_user"
+							],
+							"query": [
+								{
+									"key": "validationcode",
+									"value": "2648"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
