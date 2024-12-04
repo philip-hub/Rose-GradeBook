@@ -9,7 +9,7 @@ export default function Home() {
   const domain = process.env.NEXT_PUBLIC_DOMAIN || "https://api.rhatemyprofessors.com";
 
   const [username, setUsername] = react.useState("");
-  const [email, setEmail] = react.useState("");
+  const [email, setEmail] = react.useState("@rose-hulman.edu");
   const [password, setPassword] = react.useState("");
   const [confirmPassword, setConfirmPassword] = react.useState("");
   const [errorMessage, setErrorMessage] = react.useState("");
@@ -19,25 +19,46 @@ export default function Home() {
   const [major, setMajor] = react.useState("");
   // const [cookies, setCookie] = useCookies(['userid']);
 
+  const validateGPA = (value) => {
+    const regex = /^\d+(\.\d{0,2})?$/; // Matches numbers with up to two decimal places
+    const numericValue = parseFloat(value);
+  
+    if ((!regex.test(value) && value !== "") || numericValue > 4 || numericValue <= 0) {
+      setErrorMessage("GPA must be a number between 0 and 4 with up to two decimal places.");
+    } else {
+      setErrorMessage(""); // Clear error if valid
+    }
+  
+    setGPA(value);
+  };
+  
+
+
   const handleSignup = (e) => {
     e.preventDefault();
     const trimmedEmail = email.trim();
-
+  
     // Validate email domain
     if (!trimmedEmail.toLowerCase().endsWith("@rose-hulman.edu")) {
       setErrorMessage("Please use a valid rose-hulman.edu email.");
       return;
     }
+  
     // Validate password match
     if (password !== confirmPassword) {
       setErrorMessage("Passwords do not match.");
       return;
     }
-    // Clear error and navigate to verification page
-    setErrorMessage("");
-    console.log("New domain: "+domain+'/application/signup');
-    const url = new URL(domain+'/application/signup');
-
+  
+    // Validate GPA
+    if (!/^\d+(\.\d{0,2})?$/.test(gpa) || parseFloat(gpa) > 4 || parseFloat(gpa) <= 0) {
+      setErrorMessage("GPA must be a number between 0 and 4 with up to two decimal places.");
+      return;
+    }
+  
+    setErrorMessage(""); // Clear error and navigate to verification page
+    const url = new URL(domain + '/application/signup');
+  
     // Set the query parameters
     const params = {
       email,
@@ -48,39 +69,33 @@ export default function Home() {
       isadmin: '0',
       majors: 'Computer Science'
     };
-    // Append query parameters to the URL
+  
     Object.keys(params).forEach(key => url.searchParams.append(key, params[key]));
-    console.log("Testing fetch request: "+url);
-    let headers= {'Content-Type': 'application/x-www-form-urlencoded'};
-
-    // Make the POST request
+  
     fetch(url, {
-      method: 'POST', // POST method
-      headers: {
-        'Content-Type': 'application/json' // specify that we're sending JSON
-      },
       method: 'POST',
-    credentials: 'include',
-    body: JSON.stringify({}) // Empty body since the query parameters are in the URL
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include',
+      body: JSON.stringify({})
     })
       .then(response => {
         if (!response.ok) {
           throw new Error('Network response was not ok');
         }
-        return response.json(); // Parse JSON response
+        return response.json();
       })
       .then(data => {
-        console.log('Success:', data);
         if (data?.success) {
-          router.push("/verification"); // Use Next.js's routing
+          router.push("/verification");
         }
       })
       .catch(error => {
         console.error('Error:', error);
       });
-    
   };
-
+  
   return (
     <div className={styles.container}>
       <h2 className={styles.heading}>Create Your Account</h2>
@@ -128,13 +143,14 @@ export default function Home() {
 
         <div className={styles.formGroup}>
           <label className={styles.label}>GPA:</label>
-          <input
-            type="text"
-            value={gpa}
-            onChange={(e) => setGPA(e.target.value)}
-            className={styles.input}
-            required
-          />
+            <input
+              type="text"
+              value={gpa}
+              onChange={(e) => validateGPA(e.target.value)}
+              className={styles.input}
+              required
+            />
+
         </div>
 
         <div className={styles.formGroup}>
