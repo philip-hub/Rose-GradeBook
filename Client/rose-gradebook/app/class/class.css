@@ -1,0 +1,443 @@
+/* test.css */
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+  }
+  
+  nav {
+    display: flex;
+    justify-content: flex-end;
+    padding: 20px;
+    background-color: #f8f9fa;
+  }
+  
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+  }
+  
+  nav ul li a {
+    text-decoration: none;
+    color: #007bff;
+    font-weight: bold;
+  }
+  
+  .header-section {
+    background-color: navy;
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+  }
+  
+  .header-section h1 {
+    font-size: 48px;
+    margin-bottom: 20px;
+  }
+  
+  .header-section p {
+    font-size: 20px;
+  }
+  
+  .container {
+    text-align: center;
+    padding: 40px 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* .box-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 20px;
+    margin-top: 40px;
+  } */
+  
+  /* .box {
+    width: 250px;
+    height: 180px;
+    background-color: #e9ecef;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  } */
+  
+  footer {
+    margin-top: 40px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  input[type="submit"] {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  input[type="submit"]:hover {
+    background-color: #0056b3;
+  }
+  
+
+
+  /* Increase the font size and center the paragraph */
+.centered-text {
+  font-size: 20px; /* Adjust for larger text */
+  text-align: center;
+  max-width: 800px; /* Ensure it doesn't stretch too wide */
+  margin: 0 auto; /* Center horizontally */
+  padding-top: 20px; /* Add some padding to adjust its vertical position */
+}
+
+/* Update the container to have a max width and be centered */
+/* .container {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+} */
+
+.box-row {
+  display: flex;
+  justify-content: space-around;
+  gap: 20px;
+  margin-top: 40px;
+}
+
+/* Box styles remain the same */
+.box {
+  width: 250px;
+  height: 180px;
+  background-color: #e9ecef;
+  border-radius: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+
+.search-bar-container {
+  margin: 20px 0;
+  text-align: center; /* Center the form */
+}
+
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3 columns */
+  grid-gap: 10px;
+  margin: 20px auto; /* Adjust margin for top/bottom spacing and auto for horizontal centering */
+  padding: 0;
+  width: calc(100% - 40px); /* Adjust width to fit screen size, minus some margin */
+  box-sizing: border-box; /* Ensure padding and border are included in width calculation */
+}
+
+.grid-container form {
+  margin: 0; /* Remove default form margin */
+}
+
+.grid-container input[type="submit"] {
+  padding: 10px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  color:#0f0f0f;
+  cursor: pointer;
+  width: 100%; /* Make the button fill the form */
+  box-sizing: border-box; /* Include padding and border in the width */
+}
+
+.grid-container input[type="submit"]:hover {
+  background-color: lightblue;
+}
+
+/* Style for all h1 tags */
+h1 {
+  font-size: 2.5rem; /* Adjust the size as needed */
+  font-weight: bold; /* Optional: Makes it stand out */
+  margin-top: 20px; /* Add spacing */
+  text-align: center; /* Center-align the text */
+  color: #333; /* Adjust the color if needed */
+}
+
+/* Global styles for all heading levels */
+
+h2 {
+  font-size: 2rem; /* Slightly smaller than h1 */
+  font-weight: bold;
+  margin-top: 18px;
+  text-align: center;
+  color: #444; /* Slightly lighter than h1 */
+}
+
+h3 {
+  font-size: 1.75rem; /* Smaller than h2 */
+  font-weight: bold;
+  margin-top: 16px;
+  text-align: center;
+  color: #555;
+}
+
+h4 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-top: 14px;
+  text-align: center;
+  color: #666;
+}
+
+h5 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-top: 12px;
+  text-align: center;
+  color: #777;
+}
+
+h6 {
+  font-size: 1rem; /* Smallest size */
+  font-weight: bold;
+  margin-top: 10px;
+  text-align: center;
+  color: #888;
+}
+
+/* Make h1 white for the header-section */
+.header-section h1 {
+  color: white;
+}
+
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 1200px;
+    box-sizing: border-box;
+  }
+  
+  .class-card {
+    background-color: #e9ecef;
+    border-radius: 15px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    padding: 20px;
+    text-align: center;
+  }
+  
+  .class-card h1 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+  
+  .class-card b {
+    display: block;
+    font-size: 1rem;
+    margin-top: 10px;
+  }
+  
+  .class-card p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .class-card:hover {
+    transform: scale(1.05);
+    transition: transform 0.2s;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+  }
+
+
+  .class-grid {
+    gap: 30px; /* Increase spacing */
+    max-width: 90%;
+  }
+
+  input[type="submit"] {
+    background-color: #007bff;
+    color: white;
+    border-radius: 8px;
+    font-size: 16px;
+  }
+  input[type="submit"]:hover {
+    background-color: #0056b3;
+  }
+
+  @media (max-width: 768px) {
+    .class-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  body {
+    background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+  }
+  
+
+  form {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Aligns all items to the left, change to center if desired */
+    gap: 10px; /* Adds space between the elements */
+    max-width: 400px; /* Optional: Restricts form width */
+    margin: 0 auto; /* Centers the form horizontally */
+  }
+  
+  label {
+    margin-bottom: 5px; /* Adds spacing between labels and inputs */
+  }
+  
+  input[type="text"],
+  input[type="number"],
+  select,
+  input[type="submit"] {
+    width: 100%; /* Makes inputs and selects span full width */
+    padding: 10px;
+    box-sizing: border-box; /* Ensures padding doesn't affect width */
+  }
+  
+  input[type="submit"] {
+    width: auto; /* Makes the submit button size based on its content */
+    align-self: center; /* Centers the submit button horizontally */
+  }
+
+  nav {
+    display: flex;
+    justify-content: space-between; /* Align Home button and Search section */
+    align-items: center;
+    padding: 20px;
+    background-color: #f8f9fa;
+  }
+  
+  nav .nav-left {
+    display: flex;
+    align-items: center;
+  }
+  
+  nav .nav-center {
+    display: flex;
+    align-items: center; /* Vertically align search box and button */
+    justify-content: center;
+    flex-grow: 1; /* Push center to occupy space */
+  }
+  
+  nav form {
+    display: flex;
+    align-items: center; /* Ensure items are aligned in a row */
+  }
+  
+  nav input[type="text"] {
+    width: 400px; /* Adjust search box width */
+    padding: 10px;
+    box-sizing: border-box;
+  }
+  
+  nav input[type="submit"] {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-left: 10px; /* Add spacing between search box and button */
+  }
+  
+  nav input[type="submit"]:hover {
+    background-color: #0056b3;
+  }
+  
+  .home-button {
+    padding: 10px 20px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .home-button:hover {
+    background-color: #0056b3;
+  }
+  
+  
+
+
+/* Main container for the layout */
+.main-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  /* Style for the form box */
+  .form-box {
+    background-color: #e9ecef;
+    border-radius: 15px;
+    padding: 20px;
+    width: 400px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Style for the Class Name text */
+  .class-name-text {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #333;
+    text-align: center;
+  }
+  
+
+  .header-section {
+    background: linear-gradient(to right, #001f3f, #007bff);
+    color: white;
+    padding: 80px 20px;
+    text-align: center;
+  }
+  
+
+  .header-section {
+    background: linear-gradient(to right, #003366, #00509e); /* Blue gradient */
+    color: white; /* Ensure all text inside is white */
+    padding: 80px 20px;
+    text-align: center;
+  }
+  
+  .class-name-text {
+    font-size: 3rem;
+    font-weight: bold;
+    color: white; /* Make text white for visibility */
+    text-align: center;
+    margin-bottom: 20px; /* Add spacing below */
+  }
+  
+  .form-box {
+    background-color: #e9ecef;
+    border-radius: 15px;
+    padding: 20px;
+    width: 400px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  h4 {
+    color: white; /* Ensure the subtext "Average Grade" is also visible */
+  }
+  
+  label {
+    color: #333; /* Keep the labels dark for contrast within the form */
+  }
+  
