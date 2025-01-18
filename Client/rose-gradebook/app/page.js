@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from 'next/navigation'
+import { useEffect } from "react";
 import "./landing.css"
 
 export default function Home() {
@@ -9,6 +10,14 @@ export default function Home() {
 const redirectSignup = () => {
   router.push("/signup");
 }
+
+useEffect(() => {
+  const prefersDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (prefersDarkMode) {
+      // Redirect to the "light mode recommended" page
+      router.push('/light-mode-recommended');
+  }
+},[]);
 
   return (
     <html lang="en">
